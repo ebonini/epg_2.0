@@ -3,8 +3,8 @@ name: Sync EPG Files
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'    # At 01:00 every day UTC
-    - cron: '0 13 * * *'  # At 13:00 every day UTC
+    - cron: '0 1 * * *'    # Às 01:00 todos os dias UTC
+    - cron: '0 13 * * *'  # Às 13:00 todos os dias UTC
 
 jobs:
   build:
@@ -29,32 +29,38 @@ jobs:
         python <<EOF
         import xml.etree.ElementTree as ET
 
-        # Função para carregar e editar XML
-        def carregar_e_editar_xml(caminho_arquivo):
+        # Função para carregar XML
+        def carregar_xml(caminho_arquivo):
             tree = ET.parse(caminho_arquivo)
-            root = tree.getroot()
-            # Exemplo: Adicionando um novo elemento ao XML
-            novo_elemento = ET.Element('NovoElemento')
-            novo_elemento.text = f'Editado: {caminho_arquivo}'
-            root.append(novo_elemento)
-            return root
+            return tree.getroot()
 
-        # Carregar e editar os dois arquivos XML
-        root1 = carregar_e_editar_xml('epg4.xml')
-        root2 = carregar_e_editar_xml('guide.xml')
+        # Criar a raiz com o cabeçalho conforme especificado
+        root_combined = ET.Element('tv', attrib={
+            'generator-info-name': 'm3u4u',
+            'generator-info-url': 'https://m3u4u.com/'
+        })
+        canais_combined = []
+        programas_combined = []
 
-        # Criar o XML combinado
-        root_combined = ET.Element('RootCombinado')
+        # Processar arquivo epg4.xml
+        root1 = carregar_xml('epg4.xml')
+        canais_combined.extend(root1.findall('./channel'))
+        programas_combined.extend(root1.findall('./programme'))
 
-        # Adicionar o conteúdo do primeiro XML ao combinado
-        for elemento in root1:
-            root_combined.append(elemento)
+        # Processar arquivo guide.xml
+        root2 = carregar_xml('guide.xml')
+        canais_combined.extend(root2.findall('./channel'))
+        programas_combined.extend(root2.findall('./programme'))
 
-        # Adicionar o conteúdo do segundo XML ao combinado
-        for elemento in root2:
-            root_combined.append(elemento)
+        # Adicionar elementos <channel> ao XML combinado
+        for canal in canais_combined:
+            root_combined.append(canal)
 
-        # Salvar o XML combinado em um arquivo
+        # Adicionar elementos <programme> ao XML combinado
+        for programa in programas_combined:
+            root_combined.append(programa)
+
+        # Salvar o XML combinado com o cabeçalho correto
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
         EOF
