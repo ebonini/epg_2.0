@@ -28,6 +28,7 @@ jobs:
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
+        import gzip
 
         # Função para carregar XML
         def carregar_xml(caminho_arquivo):
@@ -80,6 +81,11 @@ jobs:
         # Salvar o XML combinado com o cabeçalho e indentação correta
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
+
+        # Compactar o arquivo gerado no formato .gz
+        with open('epg_combinado.xml', 'rb') as f_in:
+            with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
+                f_out.write(f_in.read())
         EOF
 
     - name: Commit and push if it changed
