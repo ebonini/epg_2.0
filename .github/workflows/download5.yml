@@ -29,27 +29,34 @@ jobs:
         python <<EOF
         import xml.etree.ElementTree as ET
 
-        # Função para editar XML
-        def editar_xml(caminho_arquivo):
+        # Função para carregar e editar XML
+        def carregar_e_editar_xml(caminho_arquivo):
             tree = ET.parse(caminho_arquivo)
             root = tree.getroot()
+            # Exemplo: Adicionando um novo elemento ao XML
             novo_elemento = ET.Element('NovoElemento')
-            novo_elemento.text = 'Valor Exemplo'
+            novo_elemento.text = f'Editado: {caminho_arquivo}'
             root.append(novo_elemento)
             return root
 
-        # Editar os dois arquivos
-        root1 = editar_xml('epg4.xml')
-        root2 = editar_xml('guide.xml')
+        # Carregar e editar os dois arquivos XML
+        root1 = carregar_e_editar_xml('epg4.xml')
+        root2 = carregar_e_editar_xml('guide.xml')
 
-        # Combinar os arquivos
+        # Criar o XML combinado
         root_combined = ET.Element('RootCombinado')
-        root_combined.extend(root1)
-        root_combined.extend(root2)
 
-        # Salvar arquivo combinado
+        # Adicionar o conteúdo do primeiro XML ao combinado
+        for elemento in root1:
+            root_combined.append(elemento)
+
+        # Adicionar o conteúdo do segundo XML ao combinado
+        for elemento in root2:
+            root_combined.append(elemento)
+
+        # Salvar o XML combinado em um arquivo
         tree_combined = ET.ElementTree(root_combined)
-        tree_combined.write('epg_combinado.xml', encoding='utf-8')
+        tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
     - name: Commit and push if it changed
@@ -59,4 +66,6 @@ jobs:
         git add -A
         timestamp=$(date -u)
         git commit -m "Automated file process at $timestamp" || exit 0
-        git push
+        git push https://$GITHUB_ACTOR:$GITHUB_TOKEN@github.com/ebonini/epg_2.0.git
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
