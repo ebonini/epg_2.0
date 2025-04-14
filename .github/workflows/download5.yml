@@ -28,18 +28,23 @@ jobs:
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
-        from xml.dom import minidom
 
         # Função para carregar XML
         def carregar_xml(caminho_arquivo):
             tree = ET.parse(caminho_arquivo)
             return tree.getroot()
 
-        # Função para aplicar identação no XML
-        def formatar_xml(element):
-            rough_string = ET.tostring(element, encoding='utf-8')
-            reparsed = minidom.parseString(rough_string)
-            return reparsed.toprettyxml(indent="  ")  # Usar 2 espaços para identação
+        # Função para aplicar indentação manual
+        def identar_elemento(elemento, nivel=0):
+            espaco = "  "  # 2 espaços para indentação
+            if len(elemento):  # Se o elemento tem filhos
+                elemento.text = f"\n{espaco * (nivel + 1)}"
+                for filho in elemento:
+                    identar_elemento(filho, nivel + 1)
+                elemento.tail = f"\n{espaco * nivel}"
+            else:  # Se o elemento não tem filhos
+                elemento.text = None
+                elemento.tail = f"\n{espaco * nivel}"
 
         # Criar a raiz com o cabeçalho especificado
         root_combined = ET.Element('tv', attrib={
@@ -67,9 +72,12 @@ jobs:
         for programa in programas_combined:
             root_combined.append(programa)
 
-        # Salvar o XML combinado com o cabeçalho e identação correta
-        with open('epg_combinado.xml', 'w', encoding='utf-8') as f:
-            f.write(formatar_xml(root_combined))
+        # Aplicar indentação ao XML combinado
+        identar_elemento(root_combined)
+
+        # Salvar o XML combinado com o cabeçalho e indentação correta
+        tree_combined = ET.ElementTree(root_combined)
+        tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
     - name: Commit and push if it changed
