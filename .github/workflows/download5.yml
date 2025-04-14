@@ -24,6 +24,36 @@ jobs:
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
         # Os arquivos guide.xml e guide_br1.xml já estão no formato XML e não precisam de descompactação
 
+    - name: Adjust channel IDs in guide.xml
+      run: |
+        python <<EOF
+        import xml.etree.ElementTree as ET
+
+        # Mapeamento dos IDs antigos para os novos
+        id_map = {
+            "4675": "RUNTIMEACAO",
+            "6806": "RUNTIMEFAMILIA",
+            "6800": "RUNTIMECINESPANTO",
+            "2967": "RUNTIME",
+            "6802": "RUNTIMECRIME",
+            "4677": "RUNTIMECOMEDIA",
+            "6804": "RUNTIMEROMANCE"
+        }
+
+        # Carregar o arquivo guide.xml
+        tree = ET.parse('guide.xml')
+        root = tree.getroot()
+
+        # Substituir os IDs conforme o mapeamento
+        for channel in root.findall('./channel'):
+            old_id = channel.get('id')
+            if old_id in id_map:
+                channel.set('id', id_map[old_id])
+
+        # Salvar o arquivo atualizado
+        tree.write('guide.xml', encoding='utf-8', xml_declaration=True)
+        EOF
+
     - name: Edit and combine XMLs
       run: |
         python <<EOF
