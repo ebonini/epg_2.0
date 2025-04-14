@@ -44,11 +44,17 @@ jobs:
         tree = ET.parse('guide_br1.xml')
         root = tree.getroot()
 
-        # Substituir os IDs conforme o mapeamento
+        # Substituir IDs nos elementos <channel>
         for channel in root.findall('channel'):
             old_id = channel.get('id')
             if old_id in id_map:
                 channel.set('id', id_map[old_id])
+
+        # Substituir IDs no atributo "channel" dos elementos <programme>
+        for programme in root.findall('programme'):
+            channel_id = programme.get('channel')
+            if channel_id in id_map:
+                programme.set('channel', id_map[channel_id])
 
         # Salvar o arquivo atualizado
         tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
