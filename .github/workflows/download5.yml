@@ -3,8 +3,7 @@ name: Sync EPG Files
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'    # Às 01:00 todos os dias UTC
-    - cron: '0 13 * * *'  # Às 13:00 todos os dias UTC
+    - cron: '0 1 * * *'    # Às 01:00 UTC, correspondente a 22:00 no horário de Brasília (UTC-3)
 
 jobs:
   build:
@@ -18,11 +17,12 @@ jobs:
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
+        wget -O guide_br1.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
 
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
-        # O arquivo "guide.xml" já está no formato XML e não precisa de descompactação
+        # Os arquivos guide.xml e guide_br1.xml já estão no formato XML e não precisam de descompactação
 
     - name: Edit and combine XMLs
       run: |
@@ -66,6 +66,11 @@ jobs:
         root2 = carregar_xml('guide.xml')
         canais_combined.extend(root2.findall('./channel'))
         programas_combined.extend(root2.findall('./programme'))
+
+        # Processar arquivo guide_br1.xml
+        root3 = carregar_xml('guide_br1.xml')
+        canais_combined.extend(root3.findall('./channel'))
+        programas_combined.extend(root3.findall('./programme'))
 
         # Adicionar elementos <channel> ao XML combinado
         for canal in canais_combined:
