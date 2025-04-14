@@ -34,17 +34,19 @@ jobs:
             tree = ET.parse(caminho_arquivo)
             return tree.getroot()
 
-        # Função para aplicar indentação manual
+        # Função para aplicar indentação de forma precisa
         def identar_elemento(elemento, nivel=0):
             espaco = "  "  # 2 espaços para indentação
             if len(elemento):  # Se o elemento tem filhos
-                elemento.text = f"\n{espaco * (nivel + 1)}"
+                if not elemento.text or not elemento.text.strip():
+                    elemento.text = f"\n{espaco * (nivel + 1)}"
                 for filho in elemento:
                     identar_elemento(filho, nivel + 1)
-                elemento.tail = f"\n{espaco * nivel}"
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
             else:  # Se o elemento não tem filhos
-                elemento.text = None
-                elemento.tail = f"\n{espaco * nivel}"
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
 
         # Criar a raiz com o cabeçalho especificado
         root_combined = ET.Element('tv', attrib={
