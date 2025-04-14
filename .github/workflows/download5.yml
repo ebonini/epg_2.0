@@ -45,7 +45,7 @@ jobs:
         root = tree.getroot()
 
         # Substituir os IDs conforme o mapeamento
-        for channel in root.findall('./channel'):
+        for channel in root.findall('channel'):
             old_id = channel.get('id')
             if old_id in id_map:
                 channel.set('id', id_map[old_id])
