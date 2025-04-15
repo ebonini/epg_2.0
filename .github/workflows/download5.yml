@@ -24,37 +24,38 @@ jobs:
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
         # Os arquivos guide.xml e guide_br1.xml já estão no formato XML e não precisam de descompactação
 
-    - name: Adjust channel IDs in guide_br1.xml
+    - name: Adjust channel IDs and tvg-id in guide_br1.xml
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
 
-        # Mapeamento dos IDs antigos para os novos
+        # Mapeamento dos IDs antigos para os novos e seus respectivos tvg-id
         id_map = {
-            "4675": "RUNTIMEACAO",
-            "6806": "RUNTIMEFAMILIA",
-            "6800": "RUNTIMECINESPANTO",
-            "2967": "RUNTIME",
-            "6802": "RUNTIMECRIME",
-            "4677": "RUNTIMECOMEDIA",
-            "6804": "RUNTIMEROMANCE"
+            "4675": {"new_id": "RUNTIMEACAO", "tvg_id": "Runtime Ação"},
+            "6806": {"new_id": "RUNTIMEFAMILIA", "tvg_id": "Runtime Família"},
+            "6800": {"new_id": "RUNTIMECINESPANTO", "tvg_id": "Runtime CinEspanto"},
+            "2967": {"new_id": "RUNTIME", "tvg_id": "Runtime"},
+            "6802": {"new_id": "RUNTIMECRIME", "tvg_id": "Runtime Crime"},
+            "4677": {"new_id": "RUNTIMECOMEDIA", "tvg_id": "Runtime Comédia"},
+            "6804": {"new_id": "RUNTIMEROMANCE", "tvg_id": "Runtime Romance"}
         }
 
         # Carregar o arquivo guide_br1.xml
         tree = ET.parse('guide_br1.xml')
         root = tree.getroot()
 
-        # Substituir IDs nos elementos <channel>
+        # Substituir IDs e adicionar tvg-id nos elementos <channel>
         for channel in root.findall('channel'):
             old_id = channel.get('id')
             if old_id in id_map:
-                channel.set('id', id_map[old_id])
+                channel.set('id', id_map[old_id]["new_id"])
+                channel.set('tvg-id', id_map[old_id]["tvg_id"])  # Adicionando o tvg-id
 
         # Substituir IDs no atributo "channel" dos elementos <programme>
         for programme in root.findall('programme'):
             channel_id = programme.get('channel')
             if channel_id in id_map:
-                programme.set('channel', id_map[channel_id])
+                programme.set('channel', id_map[channel_id]["new_id"])
 
         # Salvar o arquivo atualizado
         tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
