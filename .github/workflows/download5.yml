@@ -24,41 +24,7 @@ jobs:
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
         # Os arquivos guide.xml e guide_br1.xml já estão no formato XML e não precisam de descompactação
 
-    - name: Remove unwanted channels and programmes in guide_br1.xml
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-
-        # IDs a serem removidos
-        remove_ids = {
-            "5fa97a8a75cc210007c9041d", "5f120e94a5714d00074576a1", "5f120f41b7d403000783a6d6", 
-            "5f12111c9e6c2c00078ef3bb", "5f171d3442a0500007362f22", "5fa15ad6367e170007cdd098", 
-            "6479ff764f5ba5000878dfe2", "5f12101f0b12f00007844c7c", "62545ed3dab4380007582f7c", 
-            "5f171f988ab9780007fa95ea", "5f1210d14ae1f80007bafb1d", "663b9dc7cb3ea10008f1a0ce", 
-            "5fa1612a669ba0000702017b", "66aa67493a4ad2000806d91b", "61b790b985706b00072cb797", 
-            "66c79a4262e5510008ff68a5", "5f171f032cd22e0007f17f3d", "5fa991b1f09e020007e78626",
-            # IDs restantes omitidos por brevidade, mas devem ser incluídos aqui...
-        }
-
-        # Carregar o arquivo guide_br1.xml
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
-
-        # Remover canais com IDs correspondentes
-        for channel in root.findall('channel'):
-            if channel.get('id') in remove_ids:
-                root.remove(channel)
-
-        # Remover programas com IDs de canal correspondentes
-        for programme in root.findall('programme'):
-            if programme.get('channel') in remove_ids:
-                root.remove(programme)
-
-        # Salvar o arquivo atualizado
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        EOF
-
-    - name: Edit and combine XMLs
+    - name: Process and combine XMLs
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -75,7 +41,7 @@ jobs:
             if len(elemento):  # Se o elemento tem filhos
                 if not elemento.text or not elemento.text.strip():
                     elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho em elemento:
+                for filho in elemento:  # Correção: "em" substituído por "in"
                     identar_elemento(filho, nivel + 1)
                 if not elemento.tail or not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
@@ -111,7 +77,7 @@ jobs:
             root_combined.append(canal)
 
         # Adicionar elementos <programme> ao XML combinado
-        for programa em programas_combined:
+        for programa in programas_combined:
             root_combined.append(programa)
 
         # Aplicar indentação ao XML combinado
