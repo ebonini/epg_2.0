@@ -31,13 +31,13 @@ jobs:
 
         # Mapeamento dos IDs antigos para os novos e seus respectivos tvg-id
         id_map = {
-            "4675": {"new_id": "RUNTIMEACAO", "tvg_id": "Runtime Ação"},
-            "6806": {"new_id": "RUNTIMEFAMILIA", "tvg_id": "Runtime Família"},
-            "6800": {"new_id": "RUNTIMECINESPANTO", "tvg_id": "Runtime CinEspanto"},
-            "2967": {"new_id": "RUNTIME", "tvg_id": "Runtime"},
-            "6802": {"new_id": "RUNTIMECRIME", "tvg_id": "Runtime Crime"},
-            "4677": {"new_id": "RUNTIMECOMEDIA", "tvg_id": "Runtime Comédia"},
-            "6804": {"new_id": "RUNTIMEROMANCE", "tvg_id": "Runtime Romance"}
+            "4675": {"new_id": "RUNTIMEACAO", "tvg_id": "RUNTIMEACAO"},
+            "6806": {"new_id": "RUNTIMEFAMILIA", "tvg_id": "RUNTIMEFAMILIA"},
+            "6800": {"new_id": "RUNTIMECINESPANTO", "tvg_id": "RUNTIMECINESPANTO"},
+            "2967": {"new_id": "RUNTIME", "tvg_id": "RUNTIME"},
+            "6802": {"new_id": "RUNTIMECRIME", "tvg_id": "RUNTIMECRIME"},
+            "4677": {"new_id": "RUNTIMECOMEDIA", "tvg_id": "RUNTIMECOMEDIA"},
+            "6804": {"new_id": "RUNTIMEROMANCE", "tvg_id": "RUNTIMEROMANCE"}
         }
 
         # Carregar o arquivo guide_br1.xml
