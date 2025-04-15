@@ -36,34 +36,60 @@ jobs:
         tree = ET.parse('guide.xml')
         root = tree.getroot()
 
-        # Criar novas listas para canais e programas filtrados
-        filtered_channels = []
-        filtered_programmes = []
-
-        # Filtrar os elementos <channel>
-        for channel in root.findall('channel'):
-            if channel.get('id') in filter_ids:
-                filtered_channels.append(channel)
-
-        # Filtrar os elementos <programme>
-        for programme in root.findall('programme'):
-            if programme.get('channel') in filter_ids:
-                filtered_programmes.append(programme)
-
-        # Criar nova raiz para os elementos filtrados
+        # Criar nova estrutura para os elementos filtrados
         root_filtered = ET.Element('tv')
 
-        # Adicionar os canais filtrados
-        for channel in filtered_channels:
-            root_filtered.append(channel)
+        # Filtrar os elementos <channel> e <programme>
+        for channel in root.findall('channel'):
+            if channel.get('id') in filter_ids:
+                root_filtered.append(channel)
 
-        # Adicionar os programas filtrados
-        for programme in filtered_programmes:
-            root_filtered.append(programme)
+        for programme in root.findall('programme'):
+            if programme.get('channel') in filter_ids:
+                root_filtered.append(programme)
 
         # Salvar o arquivo filtrado
         tree_filtered = ET.ElementTree(root_filtered)
         tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
+        EOF
+
+    - name: Remove unwanted channels and programmes in guide_br1.xml
+      run: |
+        python <<EOF
+        import xml.etree.ElementTree as ET
+
+        # IDs completos a serem removidos
+        remove_ids = {
+            "5fa97a8a75cc210007c9041d", "5f120e94a5714d00074576a1", "5f120f41b7d403000783a6d6",
+            "5f12111c9e6c2c00078ef3bb", "5f171d3442a0500007362f22", "5fa15ad6367e170007cdd098",
+            "6479ff764f5ba5000878dfe2", "5f12101f0b12f00007844c7c", "62545ed3dab4380007582f7c",
+            "5f171f988ab9780007fa95ea", "5f1210d14ae1f80007bafb1d", "663b9dc7cb3ea10008f1a0ce",
+            "5fa1612a669ba0000702017b", "66aa67493a4ad2000806d91b", "61b790b985706b00072cb797",
+            "66c79a4262e5510008ff68a5", "5f171f032cd22e0007f17f3d", "5fa991b1f09e020007e78626",
+            "5f5a545d0dbf7f0007c09408", "663b9de4f999220008230fa8", "62c5d32e2c48f9000715b6e9",
+            "633dcebd80386500074a2461", "6474ab5cdc7a760008745008", "63eb9c5351f5d000085e8d7e",
+            "63eb9fdda995710008991c54", "6474ab1da51cb80008bfb5f4", "64ff2d8c6625510008c5a512",
+            "64ff2c773efb5100082efb73", "63d2ba2f60bc8f0008981a0e", "66b3af48d2d50d00083d6936",
+            "65f060d84e01740008d7421f", "655e5bc94261ca000810cb17", "5ff768b6a4c8b80008498610",
+            # IDs restantes omitidos por brevidade, insira os outros IDs aqui...
+        }
+
+        # Carregar o arquivo guide_br1.xml
+        tree = ET.parse('guide_br1.xml')
+        root = tree.getroot()
+
+        # Remover canais com IDs correspondentes
+        for channel in root.findall('channel'):
+            if channel.get('id') in remove_ids:
+                root.remove(channel)
+
+        # Remover programas com IDs de canal correspondentes
+        for programme in root.findall('programme'):
+            if programme.get('channel') in remove_ids:
+                root.remove(programme)
+
+        # Salvar o arquivo atualizado
+        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
     - name: Adjust channel IDs in guide_br1.xml
@@ -102,37 +128,6 @@ jobs:
         tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
-    - name: Remove unwanted channels and programmes in guide_br1.xml
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-
-        # IDs a serem removidos
-        remove_ids = {
-            "5fa97a8a75cc210007c9041d", "5f120e94a5714d00074576a1", "5f120f41b7d403000783a6d6", 
-            "5f12111c9e6c2c00078ef3bb", "5f171d3442a0500007362f22", "5fa15ad6367e170007cdd098", 
-            "6479ff764f5ba5000878dfe2", "5f12101f0b12f00007844c7c", "62545ed3dab4380007582f7c",
-            # IDs restantes omitidos por brevidade, mas devem ser incluídos aqui...
-        }
-
-        # Carregar o arquivo guide_br1.xml
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
-
-        # Remover canais com IDs correspondentes
-        for channel in root.findall('channel'):
-            if channel.get('id') in remove_ids:
-                root.remove(channel)
-
-        # Remover programas com IDs de canal correspondentes
-        for programme in root.findall('programme'):
-            if programme.get('channel') in remove_ids:
-                root.remove(programme)
-
-        # Salvar o arquivo atualizado
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        EOF
-
     - name: Process and combine XMLs
       run: |
         python <<EOF
@@ -150,7 +145,7 @@ jobs:
             if len(elemento):  # Se o elemento tem filhos
                 if not elemento.text or not elemento.text.strip():
                     elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho in elemento:  # Correção: "em" substituído por "in"
+                for filho in elemento:
                     identar_elemento(filho, nivel + 1)
                 if not elemento.tail or not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
