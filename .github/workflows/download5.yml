@@ -53,7 +53,7 @@ jobs:
         tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
-   - name: Remove unwanted channels and programmes in br.xml
+    - name: Remove unwanted channels and programmes in guide.xml
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
