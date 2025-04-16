@@ -44,7 +44,45 @@ jobs:
       run: |
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
 
-    - name: Process XML files
+    - name: Remove channels containing "pluto" in guide_br1.xml
+      run: |
+        python <<EOF
+        import xml.etree.ElementTree as ET
+
+        # Termo a ser utilizado para filtrar os IDs
+        termo_remocao = "pluto"
+
+        try:
+            # Carregar o arquivo guide_br1.xml
+            tree = ET.parse('guide_br1.xml')
+            root = tree.getroot()
+
+            # Função para remover elementos com IDs contendo o termo
+            def remover_elementos_por_termo(root, tag, atributo, termo):
+                removidos = []
+                for elemento in root.findall(tag):
+                    if termo.lower() in elemento.get(atributo, '').lower():  # Busca insensitiva
+                        removidos.append(elemento.get(atributo))
+                        root.remove(elemento)
+                return removidos
+
+            # Remover canais e programas com IDs contendo o termo "pluto"
+            canais_removidos = remover_elementos_por_termo(root, 'channel', 'id', termo_remocao)
+            programas_removidos = remover_elementos_por_termo(root, 'programme', 'channel', termo_remocao)
+
+            # Mensagens de depuração
+            print(f"Canais removidos com '{termo_remocao}': {canais_removidos}")
+            print(f"Programas removidos com '{termo_remocao}': {programas_removidos}")
+
+            # Salvar o arquivo atualizado
+            tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
+
+        except ET.ParseError as e:
+            print(f"Erro ao analisar guide_br1.xml: {e}")
+            raise
+        EOF
+
+    - name: Combine XML files into epg_combinado.xml
       run: |
         python <<EOF
         import os
@@ -71,16 +109,18 @@ jobs:
             'generator-info-url': 'https://m3u4u.com/'
         })
         
+        # Função para adicionar elementos de um arquivo ao XML combinado
+        def adicionar_elementos(source_root, combined_root):
+            if source_root is not None:
+                for channel in source_root.findall('channel'):
+                    combined_root.append(channel)
+                for programme in source_root.findall('programme'):
+                    combined_root.append(programme)
+
         # Adicionar elementos dos arquivos válidos
-        if root_epg4:
-            root_combined.extend(root_epg4.findall('./channel'))
-            root_combined.extend(root_epg4.findall('./programme'))
-        if root_guide:
-            root_combined.extend(root_guide.findall('./channel'))
-            root_combined.extend(root_guide.findall('./programme'))
-        if root_guide_br1:
-            root_combined.extend(root_guide_br1.findall('./channel'))
-            root_combined.extend(root_guide_br1.findall('./programme'))
+        adicionar_elementos(root_epg4, root_combined)
+        adicionar_elementos(root_guide, root_combined)
+        adicionar_elementos(root_guide_br1, root_combined)
 
         # Salvar o arquivo combinado
         tree_combined = ET.ElementTree(root_combined)
