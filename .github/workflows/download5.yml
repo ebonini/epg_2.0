@@ -19,41 +19,36 @@ jobs:
         wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
         wget -O guide_br1.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
 
-    - name: Verify downloaded files
+    - name: Validate and debug guide_br1.xml
       run: |
         if [ ! -s guide_br1.xml ]; then
           echo "Erro: O arquivo guide_br1.xml está vazio ou não foi baixado corretamente."
           exit 1
         fi
-        if [ ! -s epg4.xml.gz ]; then
-          echo "Erro: O arquivo epg4.xml.gz está vazio ou não foi baixado corretamente."
-          exit 1
-        fi
-
-    - name: Check guide.xml validity
-      run: |
-        if [ ! -s guide.xml ]; then
-          echo "Aviso: O arquivo guide.xml está vazio ou não foi baixado corretamente. Será ignorado."
-          touch guide_filtered.xml  # Criar um arquivo vazio para continuar o processo
-        else
-          echo "Primeiras linhas do arquivo guide.xml:"
-          head -n 10 guide.xml
-        fi
-
-    - name: Extract files
-      run: |
-        gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
+        echo "Primeiras linhas do arquivo guide_br1.xml:"
+        head -n 20 guide_br1.xml
+        echo "Últimas linhas do arquivo guide_br1.xml:"
+        tail -n 20 guide_br1.xml
+        echo "Tamanho do arquivo guide_br1.xml:"
+        wc -c guide_br1.xml
 
     - name: Remove channels containing "pluto" in guide_br1.xml
       run: |
         python <<EOF
+        import os
         import xml.etree.ElementTree as ET
 
         # Termo a ser utilizado para filtrar os IDs
         termo_remocao = "pluto"
 
+        # Validar se o arquivo tem uma estrutura mínima de XML
+        with open('guide_br1.xml', 'r', encoding='utf-8') as file:
+            content = file.read().strip()
+            if not content.startswith('<') or not content.endswith('>'):
+                raise ValueError("O arquivo guide_br1.xml não contém um formato XML válido.")
+
         try:
-            # Carregar o arquivo guide_br1.xml
+            # Carregar o arquivo XML
             tree = ET.parse('guide_br1.xml')
             root = tree.getroot()
 
