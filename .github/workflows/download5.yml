@@ -30,11 +30,16 @@ jobs:
           exit 1
         fi
 
+    - name: Inspect guide.xml content
+      run: |
+        echo "Mostrando as primeiras linhas do arquivo guide.xml para depuração:"
+        head -n 10 guide.xml
+
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
 
-    - name: Filter data in guide.xml for specific channels
+    - name: Process guide.xml
       run: |
         python <<EOF
         import os
@@ -45,6 +50,12 @@ jobs:
         # Verificar se o arquivo existe e não está vazio
         if not os.path.exists('guide.xml') or os.path.getsize('guide.xml') == 0:
             raise FileNotFoundError("O arquivo guide.xml está vazio ou não foi baixado corretamente.")
+
+        # Validar se o arquivo tem uma estrutura mínima de XML
+        with open('guide.xml', 'r', encoding='utf-8') as file:
+            first_line = file.readline().strip()
+            if not first_line.startswith('<'):
+                raise ValueError("O arquivo guide.xml não contém um formato XML válido.")
 
         try:
             tree = ET.parse('guide.xml')
