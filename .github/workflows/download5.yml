@@ -1,33 +1,9 @@
-name: Sync and Combine EPG Files
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 1 * * *'    # Às 22:00 todos os dias no horário de Brasília (UTC-3)
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Download files
-      run: |
-        wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
-        wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
-
-    - name: Extract files
-      run: |
-        gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
-        gzip -d br.xml.gz || true    # Descompactar br.xml.gz
-
     - name: Combine XML files with sequencing
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
         import gzip
+        import os
 
         # Função para carregar um arquivo XML
         def carregar_xml(caminho):
@@ -105,17 +81,14 @@ jobs:
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
 
+        # Verificar se o arquivo combinado foi salvo corretamente
+        if not os.path.exists('epg_combinado.xml'):
+            raise FileNotFoundError("Erro: o arquivo epg_combinado.xml não foi criado corretamente.")
+
         # Compactar o arquivo gerado no formato .gz
         with open('epg_combinado.xml', 'rb') as f_in:
             with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
                 f_out.write(f_in.read())
-        EOF
 
-    - name: Commit and push combined file
-      run: |
-        git config user.name "Automated"
-        git config user.email "eduardo@ebonini.com.br"
-        git add epg_combinado.xml epg_combinado.xml.gz
-        timestamp=$(date -u)
-        git commit -m "Automated combination at $timestamp" || exit 0
-        git push
+        print("Arquivos epg_combinado.xml e epg_combinado.xml.gz gerados com sucesso!")
+        EOF
