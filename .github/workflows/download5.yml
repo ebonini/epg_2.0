@@ -53,7 +53,7 @@ jobs:
         tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
-    - name: Remove unwanted channels and programmes in guide_br1.xml
+        - name: Remove unwanted channels and programmes in guide_br1.xml
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -78,19 +78,26 @@ jobs:
             "662156805a31f70013dba21c", "5f6df5a173d7340007c559f7", "625464a945b6a200079257d1"
         }
 
+        # Função para remover elementos com base nos IDs
+        def remover_elementos_por_id(root, tag, atributo):
+            removidos = []
+            for elemento in root.findall(tag):
+                if elemento.get(atributo) in remove_ids:
+                    removidos.append(elemento.get(atributo))
+                    root.remove(elemento)
+            return removidos
+
         # Carregar o arquivo guide_br1.xml
         tree = ET.parse('guide_br1.xml')
         root = tree.getroot()
 
-        # Remover canais com IDs correspondentes
-        for channel in root.findall('channel'):
-            if channel.get('id') in remove_ids:
-                root.remove(channel)
+        # Remover canais e programas
+        canais_removidos = remover_elementos_por_id(root, 'channel', 'id')
+        programas_removidos = remover_elementos_por_id(root, 'programme', 'channel')
 
-        # Remover programas com IDs de canal correspondentes
-        for programme in root.findall('programme'):
-            if programme.get('channel') in remove_ids:
-                root.remove(programme)
+        # Feedback para depuração
+        print(f"Canais removidos: {canais_removidos}")
+        print(f"Programas removidos: {programas_removidos}")
 
         # Salvar o arquivo atualizado
         tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
