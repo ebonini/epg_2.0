@@ -37,9 +37,15 @@ jobs:
     - name: Filter data in guide.xml for specific channels
       run: |
         python <<EOF
+        import os
         import xml.etree.ElementTree as ET
 
         filter_ids = {"C3-TV", "UOLTV"}
+
+        # Verificar se o arquivo existe e não está vazio
+        if not os.path.exists('guide.xml') or os.path.getsize('guide.xml') == 0:
+            raise FileNotFoundError("O arquivo guide.xml está vazio ou não foi baixado corretamente.")
+
         try:
             tree = ET.parse('guide.xml')
             root = tree.getroot()
@@ -63,6 +69,7 @@ jobs:
     - name: Remove unwanted channels and programmes in guide_br1.xml
       run: |
         python <<EOF
+        import os
         import xml.etree.ElementTree as ET
 
         remove_ids = {
@@ -70,6 +77,10 @@ jobs:
         }
 
         try:
+            # Verificar se o arquivo existe e não está vazio
+            if not os.path.exists('guide_br1.xml') or os.path.getsize('guide_br1.xml') == 0:
+                raise FileNotFoundError("O arquivo guide_br1.xml está vazio ou não foi baixado corretamente.")
+
             tree = ET.parse('guide_br1.xml')
             root = tree.getroot()
 
@@ -90,37 +101,6 @@ jobs:
             tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
         except ET.ParseError as e:
             print(f"Erro ao analisar guide_br1.xml: {e}")
-            raise
-        EOF
-
-    - name: Adjust channel IDs in guide_br1.xml
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-
-        id_map = {
-            "4675": "RUNTIMEACAO",
-            "6806": "RUNTIMEFAMILIA",
-            "6800": "RUNTIMECINESPANTO"
-        }
-
-        try:
-            tree = ET.parse('guide_br1.xml')
-            root = tree.getroot()
-
-            for channel in root.findall('channel'):
-                old_id = channel.get('id')
-                if old_id in id_map:
-                    channel.set('id', id_map[old_id])
-
-            for programme in root.findall('programme'):
-                channel_id = programme.get('channel')
-                if channel_id in id_map:
-                    programme.set('channel', id_map[channel_id])
-
-            tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        except ET.ParseError as e:
-            print(f"Erro ao ajustar guide_br1.xml: {e}")
             raise
         EOF
 
