@@ -21,98 +21,70 @@ jobs:
 
     - name: Verify downloaded files
       run: |
-        if [ ! -s guide.xml ]; then
-          echo "Erro: O arquivo guide.xml está vazio ou não foi baixado corretamente."
-          exit 1
-        fi
         if [ ! -s guide_br1.xml ]; then
           echo "Erro: O arquivo guide_br1.xml está vazio ou não foi baixado corretamente."
           exit 1
         fi
+        if [ ! -s epg4.xml.gz ]; then
+          echo "Erro: O arquivo epg4.xml.gz está vazio ou não foi baixado corretamente."
+          exit 1
+        fi
 
-    - name: Inspect guide.xml content
+    - name: Check guide.xml validity
       run: |
-        echo "Mostrando as primeiras linhas do arquivo guide.xml para depuração:"
-        head -n 10 guide.xml
+        if [ ! -s guide.xml ]; then
+          echo "Aviso: O arquivo guide.xml está vazio ou não foi baixado corretamente. Será ignorado."
+          touch guide_filtered.xml  # Criar um arquivo vazio para continuar o processo
+        else
+          echo "Primeiras linhas do arquivo guide.xml:"
+          head -n 10 guide.xml
+        fi
 
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
 
-    - name: Process guide.xml
+    - name: Process XML files
       run: |
         python <<EOF
         import os
         import xml.etree.ElementTree as ET
 
-        filter_ids = {"C3-TV", "UOLTV"}
+        def carregar_xml(caminho):
+            if not os.path.exists(caminho) or os.path.getsize(caminho) == 0:
+                print(f"Arquivo {caminho} está vazio ou não disponível. Ignorando...")
+                return None
+            try:
+                return ET.parse(caminho).getroot()
+            except ET.ParseError as e:
+                print(f"Erro ao analisar {caminho}: {e}. Ignorando...")
+                return None
 
-        # Verificar se o arquivo existe e não está vazio
-        if not os.path.exists('guide.xml') or os.path.getsize('guide.xml') == 0:
-            raise FileNotFoundError("O arquivo guide.xml está vazio ou não foi baixado corretamente.")
+        # Carregar os arquivos XML
+        root_epg4 = carregar_xml('epg4.xml')
+        root_guide = carregar_xml('guide.xml') or ET.Element('tv')  # Use uma estrutura vazia se inválido
+        root_guide_br1 = carregar_xml('guide_br1.xml')
 
-        # Validar se o arquivo tem uma estrutura mínima de XML
-        with open('guide.xml', 'r', encoding='utf-8') as file:
-            first_line = file.readline().strip()
-            if not first_line.startswith('<'):
-                raise ValueError("O arquivo guide.xml não contém um formato XML válido.")
+        # Criar a estrutura combinada
+        root_combined = ET.Element('tv', attrib={
+            'generator-info-name': 'm3u4u',
+            'generator-info-url': 'https://m3u4u.com/'
+        })
+        
+        # Adicionar elementos dos arquivos válidos
+        if root_epg4:
+            root_combined.extend(root_epg4.findall('./channel'))
+            root_combined.extend(root_epg4.findall('./programme'))
+        if root_guide:
+            root_combined.extend(root_guide.findall('./channel'))
+            root_combined.extend(root_guide.findall('./programme'))
+        if root_guide_br1:
+            root_combined.extend(root_guide_br1.findall('./channel'))
+            root_combined.extend(root_guide_br1.findall('./programme'))
 
-        try:
-            tree = ET.parse('guide.xml')
-            root = tree.getroot()
-            root_filtered = ET.Element('tv')
-
-            for channel in root.findall('channel'):
-                if channel.get('id') in filter_ids:
-                    root_filtered.append(channel)
-
-            for programme in root.findall('programme'):
-                if programme.get('channel') in filter_ids:
-                    root_filtered.append(programme)
-
-            tree_filtered = ET.ElementTree(root_filtered)
-            tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
-        except ET.ParseError as e:
-            print(f"Erro ao analisar guide.xml: {e}")
-            raise
-        EOF
-
-    - name: Remove unwanted channels and programmes in guide_br1.xml
-      run: |
-        python <<EOF
-        import os
-        import xml.etree.ElementTree as ET
-
-        remove_ids = {
-            "656e2a10954b020008ed167c", "62cd9e5a5c38c00007f5669a", "6298bd10d88ef000073f16b7"
-        }
-
-        try:
-            # Verificar se o arquivo existe e não está vazio
-            if not os.path.exists('guide_br1.xml') or os.path.getsize('guide_br1.xml') == 0:
-                raise FileNotFoundError("O arquivo guide_br1.xml está vazio ou não foi baixado corretamente.")
-
-            tree = ET.parse('guide_br1.xml')
-            root = tree.getroot()
-
-            def remover_elementos_por_id(root, tag, atributo):
-                removidos = []
-                for elemento in root.findall(tag):
-                    if elemento.get(atributo) in remove_ids:
-                        removidos.append(elemento.get(atributo))
-                        root.remove(elemento)
-                return removidos
-
-            canais_removidos = remover_elementos_por_id(root, 'channel', 'id')
-            programas_removidos = remover_elementos_por_id(root, 'programme', 'channel')
-
-            print(f"Canais removidos: {canais_removidos}")
-            print(f"Programas removidos: {programas_removidos}")
-
-            tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        except ET.ParseError as e:
-            print(f"Erro ao analisar guide_br1.xml: {e}")
-            raise
+        # Salvar o arquivo combinado
+        tree_combined = ET.ElementTree(root_combined)
+        tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
         EOF
 
     - name: Commit and push if it changed
