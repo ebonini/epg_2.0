@@ -17,12 +17,13 @@ jobs:
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
-        wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
+        wget -O guide.xml.gz https://raw.github.com/Neywerson/GuideTV/BR1/guide.xml.gz
 
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
+        gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
 
     - name: Combine XML files with validation
       run: |
