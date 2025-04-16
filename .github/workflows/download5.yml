@@ -78,15 +78,25 @@ jobs:
         # Criar a estrutura combinada com o cabeçalho copiado
         root_combined = ET.Element('tv', attrib=cabecalho)
 
-        # Adicionar elementos do primeiro arquivo (epg4.xml)
+        # Adicionar <channel> IDs do epg4.xml (primeira fonte)
         if root_epg4 is not None:
-            root_combined.extend(root_epg4.findall('./channel'))
-            root_combined.extend(root_epg4.findall('./programme'))
+            for channel in root_epg4.findall('./channel'):
+                root_combined.append(channel)
 
-        # Adicionar elementos do segundo arquivo (br.xml) em sequência
+        # Adicionar <channel> IDs do br.xml (segunda fonte) **APÓS** os da primeira
         if root_br is not None:
-            root_combined.extend(root_br.findall('./channel'))
-            root_combined.extend(root_br.findall('./programme'))
+            for channel in root_br.findall('./channel'):
+                root_combined.append(channel)
+
+        # Adicionar <programme> do epg4.xml
+        if root_epg4 is not None:
+            for programme in root_epg4.findall('./programme'):
+                root_combined.append(programme)
+
+        # Adicionar <programme> do br.xml
+        if root_br is not None:
+            for programme in root_br.findall('./programme'):
+                root_combined.append(programme)
 
         # Aplicar indentação no arquivo combinado
         identar_elemento(root_combined)
