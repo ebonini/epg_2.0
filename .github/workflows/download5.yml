@@ -106,16 +106,18 @@ jobs:
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
 
-        # Verificar se o arquivo combinado foi salvo corretamente
-        if not os.path.exists('epg_combinado.xml'):
-            raise FileNotFoundError("Erro: o arquivo epg_combinado.xml não foi criado corretamente.")
+        # Confirmar se o arquivo foi atualizado
+        if os.path.exists('epg_combinado.xml'):
+            print("Arquivo epg_combinado.xml gerado com sucesso!")
+        else:
+            raise FileNotFoundError("Erro: o arquivo epg_combinado.xml não foi criado ou atualizado corretamente.")
 
         # Compactar o arquivo gerado no formato .gz
         with open('epg_combinado.xml', 'rb') as f_in:
             with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
                 f_out.write(f_in.read())
 
-        print("Arquivos epg_combinado.xml e epg_combinado.xml.gz gerados com sucesso!")
+        print("Arquivos epg_combinado.xml e epg_combinado.xml.gz foram gerados com sucesso!")
         EOF
 
     - name: Commit and push combined file
