@@ -24,31 +24,26 @@ jobs:
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
         # Os arquivos guide.xml e br.xml já estão no formato XML e não precisam de descompactação
 
-    - name: Filter data in guide.xml for specific channels
+    - name: Copy all data from guide.xml
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
-
-        # IDs desejados para filtragem
-        filter_ids = {"C3-TV", "UOLTV"}
 
         # Carregar o arquivo guide.xml
         tree = ET.parse('guide.xml')
         root = tree.getroot()
 
-        # Criar nova estrutura para os elementos filtrados
+        # Criar nova estrutura para os elementos
         root_filtered = ET.Element('tv')
 
-        # Filtrar os elementos <channel> e <programme>
+        # Adicionar todos os elementos <channel> e <programme> ao novo XML (sem filtragem)
         for channel in root.findall('channel'):
-            if channel.get('id') in filter_ids:
-                root_filtered.append(channel)
+            root_filtered.append(channel)
 
         for programme in root.findall('programme'):
-            if programme.get('channel') in filter_ids:
-                root_filtered.append(programme)
+            root_filtered.append(programme)
 
-        # Salvar o arquivo filtrado
+        # Salvar o arquivo sem filtragem
         tree_filtered = ET.ElementTree(root_filtered)
         tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
         EOF
