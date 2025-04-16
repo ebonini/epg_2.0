@@ -19,6 +19,17 @@ jobs:
         wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
         wget -O guide_br1.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
 
+    - name: Verify downloaded files
+      run: |
+        if [ ! -s guide.xml ]; then
+          echo "Erro: O arquivo guide.xml está vazio ou não foi baixado corretamente."
+          exit 1
+        fi
+        if [ ! -s guide_br1.xml ]; then
+          echo "Erro: O arquivo guide_br1.xml está vazio ou não foi baixado corretamente."
+          exit 1
+        fi
+
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
@@ -29,20 +40,24 @@ jobs:
         import xml.etree.ElementTree as ET
 
         filter_ids = {"C3-TV", "UOLTV"}
-        tree = ET.parse('guide.xml')
-        root = tree.getroot()
-        root_filtered = ET.Element('tv')
+        try:
+            tree = ET.parse('guide.xml')
+            root = tree.getroot()
+            root_filtered = ET.Element('tv')
 
-        for channel in root.findall('channel'):
-            if channel.get('id') in filter_ids:
-                root_filtered.append(channel)
+            for channel in root.findall('channel'):
+                if channel.get('id') in filter_ids:
+                    root_filtered.append(channel)
 
-        for programme in root.findall('programme'):
-            if programme.get('channel') in filter_ids:
-                root_filtered.append(programme)
+            for programme in root.findall('programme'):
+                if programme.get('channel') in filter_ids:
+                    root_filtered.append(programme)
 
-        tree_filtered = ET.ElementTree(root_filtered)
-        tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
+            tree_filtered = ET.ElementTree(root_filtered)
+            tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
+        except ET.ParseError as e:
+            print(f"Erro ao analisar guide.xml: {e}")
+            raise
         EOF
 
     - name: Remove unwanted channels and programmes in guide_br1.xml
@@ -51,28 +66,31 @@ jobs:
         import xml.etree.ElementTree as ET
 
         remove_ids = {
-            "656e2a10954b020008ed167c", "62cd9e5a5c38c00007f5669a", "6298bd10d88ef000073f16b7",
-            "5f1ef1a8cec6be00072a7ac9", "5f32cf37c9ff2b00082adbc8", "678fdf9e3de7c8cf948e8824",
-            "620d12a82e8ac50007c269c3", "638df93ae2f2a3000737c168", "62b5c5a064163d0007b2efe6"
+            "656e2a10954b020008ed167c", "62cd9e5a5c38c00007f5669a", "6298bd10d88ef000073f16b7"
         }
 
-        def remover_elementos_por_id(root, tag, atributo):
-            removidos = []
-            for elemento in root.findall(tag):
-                if elemento.get(atributo) in remove_ids:
-                    removidos.append(elemento.get(atributo))
-                    root.remove(elemento)
-            return removidos
+        try:
+            tree = ET.parse('guide_br1.xml')
+            root = tree.getroot()
 
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
-        canais_removidos = remover_elementos_por_id(root, 'channel', 'id')
-        programas_removidos = remover_elementos_por_id(root, 'programme', 'channel')
+            def remover_elementos_por_id(root, tag, atributo):
+                removidos = []
+                for elemento in root.findall(tag):
+                    if elemento.get(atributo) in remove_ids:
+                        removidos.append(elemento.get(atributo))
+                        root.remove(elemento)
+                return removidos
 
-        print(f"Canais removidos: {canais_removidos}")
-        print(f"Programas removidos: {programas_removidos}")
+            canais_removidos = remover_elementos_por_id(root, 'channel', 'id')
+            programas_removidos = remover_elementos_por_id(root, 'programme', 'channel')
 
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
+            print(f"Canais removidos: {canais_removidos}")
+            print(f"Programas removidos: {programas_removidos}")
+
+            tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
+        except ET.ParseError as e:
+            print(f"Erro ao analisar guide_br1.xml: {e}")
+            raise
         EOF
 
     - name: Adjust channel IDs in guide_br1.xml
@@ -86,77 +104,24 @@ jobs:
             "6800": "RUNTIMECINESPANTO"
         }
 
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
+        try:
+            tree = ET.parse('guide_br1.xml')
+            root = tree.getroot()
 
-        for channel in root.findall('channel'):
-            old_id = channel.get('id')
-            if old_id in id_map:
-                channel.set('id', id_map[old_id])
+            for channel in root.findall('channel'):
+                old_id = channel.get('id')
+                if old_id in id_map:
+                    channel.set('id', id_map[old_id])
 
-        for programme in root.findall('programme'):
-            channel_id = programme.get('channel')
-            if channel_id in id_map:
-                programme.set('channel', id_map[channel_id])
+            for programme in root.findall('programme'):
+                channel_id = programme.get('channel')
+                if channel_id in id_map:
+                    programme.set('channel', id_map[channel_id])
 
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        EOF
-
-    - name: Process and combine XMLs
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-        import gzip
-
-        def carregar_xml(caminho_arquivo):
-            tree = ET.parse(caminho_arquivo)
-            return tree.getroot()
-
-        def identar_elemento(elemento, nivel=0):
-            espaco = "  "
-            if len(elemento):
-                if not elemento.text or not elemento.text.strip():
-                    elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho in elemento:
-                    identar_elemento(filho, nivel + 1)
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-            else:
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-
-        root_combined = ET.Element('tv', attrib={
-            'generator-info-name': 'm3u4u',
-            'generator-info-url': 'https://m3u4u.com/'
-        })
-        canais_combined = []
-        programas_combined = []
-
-        root1 = carregar_xml('epg4.xml')
-        canais_combined.extend(root1.findall('./channel'))
-        programas_combined.extend(root1.findall('./programme'))
-
-        root2 = carregar_xml('guide_filtered.xml')
-        canais_combined.extend(root2.findall('./channel'))
-        programas_combined.extend(root2.findall('./programme'))
-
-        root3 = carregar_xml('guide_br1.xml')
-        canais_combined.extend(root3.findall('./channel'))
-        programas_combined.extend(root3.findall('./programme'))
-
-        for canal in canais_combined:
-            root_combined.append(canal)
-        for programa in programas_combined:
-            root_combined.append(programa)
-
-        identar_elemento(root_combined)
-
-        tree_combined = ET.ElementTree(root_combined)
-        tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
-
-        with open('epg_combinado.xml', 'rb') as f_in:
-            with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
-                f_out.write(f_in.read())
+            tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
+        except ET.ParseError as e:
+            print(f"Erro ao ajustar guide_br1.xml: {e}")
+            raise
         EOF
 
     - name: Commit and push if it changed
