@@ -17,13 +17,14 @@ jobs:
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
+        wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
 
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
 
-    - name: Combine XML files with sequencing
+    - name: Combine XML files with validation
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -72,6 +73,7 @@ jobs:
         # Carregar arquivos XML
         root_epg4 = carregar_xml('epg4.xml')
         root_br = carregar_xml('br.xml')
+        root_guide = carregar_xml('guide.xml')
 
         # Copiar o cabeçalho do epg4.xml
         cabecalho = copiar_cabecalho('epg4.xml')
@@ -80,14 +82,25 @@ jobs:
         root_combined = ET.Element('tv', attrib=cabecalho)
 
         # Adicionar <channel> IDs do epg4.xml (primeira fonte)
+        ids_existentes = set()  # Para rastrear os IDs já adicionados
         if root_epg4 is not None:
             for channel in root_epg4.findall('./channel'):
                 root_combined.append(channel)
+                ids_existentes.add(channel.attrib.get('id'))
 
-        # Adicionar <channel> IDs do br.xml (segunda fonte) **APÓS** os da primeira
+        # Adicionar <channel> IDs do br.xml (segunda fonte)
         if root_br is not None:
             for channel in root_br.findall('./channel'):
-                root_combined.append(channel)
+                if channel.attrib.get('id') not in ids_existentes:
+                    root_combined.append(channel)
+                    ids_existentes.add(channel.attrib.get('id'))
+
+        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância
+        if root_guide is not None:
+            for channel in root_guide.findall('./channel'):
+                if channel.attrib.get('id') not in ids_existentes:
+                    root_combined.append(channel)
+                    ids_existentes.add(channel.attrib.get('id'))
 
         # Adicionar <programme> do epg4.xml
         if root_epg4 is not None:
@@ -97,7 +110,14 @@ jobs:
         # Adicionar <programme> do br.xml
         if root_br is not None:
             for programme in root_br.findall('./programme'):
-                root_combined.append(programme)
+                if programme.attrib.get('channel') in ids_existentes:
+                    root_combined.append(programme)
+
+        # Adicionar <programme> do guide.xml somente se não houver redundância
+        if root_guide is not None:
+            for programme in root_guide.findall('./programme'):
+                if programme.attrib.get('channel') in ids_existentes:
+                    root_combined.append(programme)
 
         # Aplicar indentação no arquivo combinado
         identar_elemento(root_combined)
@@ -105,12 +125,6 @@ jobs:
         # Salvar o XML combinado com o cabeçalho e indentação correta
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
-
-        # Confirmar se o arquivo foi atualizado
-        if os.path.exists('epg_combinado.xml'):
-            print("Arquivo epg_combinado.xml gerado com sucesso!")
-        else:
-            raise FileNotFoundError("Erro: o arquivo epg_combinado.xml não foi criado ou atualizado corretamente.")
 
         # Compactar o arquivo gerado no formato .gz
         with open('epg_combinado.xml', 'rb') as f_in:
