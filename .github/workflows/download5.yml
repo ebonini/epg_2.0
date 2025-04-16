@@ -17,187 +17,98 @@ jobs:
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O guide.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
-        wget -O guide_br1.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR1/guide.xml
+        wget -O br.xml https://i.mjh.nz/PlutoTV/br.xml
 
-    - name: Extract files
+    - name: Validate br.xml
       run: |
-        gzip -d epg4.xml.gz || true  # Ignorar erro se não for arquivo compactado
-        # Os arquivos guide.xml e guide_br1.xml já estão no formato XML e não precisam de descompactação
+        if [ ! -s br.xml ]; then
+          echo "Erro: O arquivo br.xml está vazio ou não foi baixado corretamente."
+          exit 1
+        fi
+        echo "Primeiras linhas do arquivo br.xml:"
+        head -n 20 br.xml
 
-    - name: Filter data in guide.xml for specific channels
+    - name: Remove unwanted channels and programmes in br.xml
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
 
-        # IDs desejados para filtragem
-        filter_ids = {"C3-TV", "UOLTV"}
+        # IDs completos ou termos condicionalmente removidos
+        termo_remocao = "pluto"
 
-        # Carregar o arquivo guide.xml
-        tree = ET.parse('guide.xml')
-        root = tree.getroot()
+        try:
+            # Carregar o arquivo br.xml
+            tree = ET.parse('br.xml')
+            root = tree.getroot()
 
-        # Criar nova estrutura para os elementos filtrados
-        root_filtered = ET.Element('tv')
+            # Função para remover elementos com IDs contendo o termo
+            def remover_elementos_por_termo(root, tag, atributo, termo):
+                removidos = []
+                for elemento in root.findall(tag):
+                    if termo.lower() in elemento.get(atributo, '').lower():  # Busca insensitiva
+                        removidos.append(elemento.get(atributo))
+                        root.remove(elemento)
+                return removidos
 
-        # Filtrar os elementos <channel> e <programme>
-        for channel in root.findall('channel'):
-            if channel.get('id') in filter_ids:
-                root_filtered.append(channel)
+            # Remover canais e programas com IDs contendo o termo "pluto"
+            canais_removidos = remover_elementos_por_termo(root, 'channel', 'id', termo_remocao)
+            programas_removidos = remover_elementos_por_termo(root, 'programme', 'channel', termo_remocao)
 
-        for programme in root.findall('programme'):
-            if programme.get('channel') in filter_ids:
-                root_filtered.append(programme)
+            # Mensagens de depuração
+            print(f"Canais removidos com '{termo_remocao}': {canais_removidos}")
+            print(f"Programas removidos com '{termo_remocao}': {programas_removidos}")
 
-        # Salvar o arquivo filtrado
-        tree_filtered = ET.ElementTree(root_filtered)
-        tree_filtered.write('guide_filtered.xml', encoding='utf-8', xml_declaration=True)
+            # Salvar o arquivo atualizado
+            tree.write('br.xml', encoding='utf-8', xml_declaration=True)
+
+        except ET.ParseError as e:
+            print(f"Erro ao analisar br.xml: {e}")
+            raise
         EOF
 
-    - name: Remove unwanted channels and programmes in guide_br1.xml
+    - name: Combine XML files into epg_combinado.xml
       run: |
         python <<EOF
+        import os
         import xml.etree.ElementTree as ET
 
-        # IDs completos a serem removidos
-        remove_ids = {
-            "656e2a10954b020008ed167c", "62cd9e5a5c38c00007f5669a", "6298bd10d88ef000073f16b7",
-            "5f1ef1a8cec6be00072a7ac9", "5f32cf37c9ff2b00082adbc8", "678fdf9e3de7c8cf948e8824",
-            "620d12a82e8ac50007c269c3", "638df93ae2f2a3000737c168", "62b5c5a064163d0007b2efe6",
-            "62310f66d5888f0007534342", "666c9c60a7efd40008f552f0", "619e6614c9d9650007a2b171",
-            "6102e04e9ab1db0007a980a1", "6317ba014d4d040007227f72", "679a973a97782f0008ff4bb6",
-            "645a99282858cb0008ea8378", "62e010e6cd663f0007e57dc8", "64b9370b409629000802d32b",
-            "6048fc47a44e540007745d2b", "66997e8d3a4ad20008e50be9", "63dac28760bc8f0008a7654b",
-            "64b02be14ea480000831ec78", "65a6818c7bdc8d0008457b21", "6660b636cb3ea10008429c6a",
-            "64df7ab4dfa32400083c517b", "64f6180130ab3300083d896b", "6752f863cbfdc56330643e9b",
-            "664f766741af640008e59cc9", "63eba66da8b2270008436b10", "65df71008b24c80008f04281",
-            "65df704366eec8000898e32f", "65df713dec9fda0008b7a81d", "65df70b0f7f0af0008c3b316",
-            "609ae66b359b270007869ff1", "6001f3018502100007f528ac", "5f357e91b18f0b00073583d2",
-            "5f36f2346ede750007332d11", "67802a22a5d8215f99dcee30", "5f5141c1605ddf000748eb1b",
-            "5f515ebac01c0f00080e8439", "66a7d0e0cd0d310008448610", "5f32d432d612e50007e56133",
-            "5f1ef23020a5ac0007e5e8ea", "633ee9ba83c08f00076b60a6", "5fd1419a3b4f4b000773ba85",
-            "662156805a31f70013dba21c", "5f6df5a173d7340007c559f7", "625464a945b6a200079257d1"
-        }
+        def carregar_xml(caminho):
+            if not os.path.exists(caminho) or os.path.getsize(caminho) == 0:
+                print(f"Arquivo {caminho} está vazio ou não disponível. Ignorando...")
+                return None
+            try:
+                return ET.parse(caminho).getroot()
+            except ET.ParseError as e:
+                print(f"Erro ao analisar {caminho}: {e}. Ignorando...")
+                return None
 
-        # Carregar o arquivo guide_br1.xml
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
+        # Carregar os arquivos XML
+        root_epg4 = carregar_xml('epg4.xml')
+        root_guide = carregar_xml('guide.xml') or ET.Element('tv')  # Use uma estrutura vazia se inválido
+        root_br = carregar_xml('br.xml')
 
-        # Remover canais com IDs correspondentes
-        for channel in root.findall('channel'):
-            if channel.get('id') in remove_ids:
-                root.remove(channel)
-
-        # Remover programas com IDs de canal correspondentes
-        for programme in root.findall('programme'):
-            if programme.get('channel') in remove_ids:
-                root.remove(programme)
-
-        # Salvar o arquivo atualizado
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        EOF
-    - name: Adjust channel IDs in guide_br1.xml
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-
-        # Mapeamento dos IDs antigos para os novos
-        id_map = {
-            "4675": "RUNTIMEACAO",
-            "6806": "RUNTIMEFAMILIA",
-            "6800": "RUNTIMECINESPANTO",
-            "2967": "RUNTIME",
-            "6802": "RUNTIMECRIME",
-            "4677": "RUNTIMECOMEDIA",
-            "6804": "RUNTIMEROMANCE"
-        }
-
-        # Carregar o arquivo guide_br1.xml
-        tree = ET.parse('guide_br1.xml')
-        root = tree.getroot()
-
-        # Substituir IDs nos elementos <channel>
-        for channel in root.findall('channel'):
-            old_id = channel.get('id')
-            if old_id in id_map:
-                channel.set('id', id_map[old_id])
-
-        # Substituir IDs no atributo "channel" dos elementos <programme>
-        for programme in root.findall('programme'):
-            channel_id = programme.get('channel')
-            if channel_id in id_map:
-                programme.set('channel', id_map[channel_id])
-
-        # Salvar o arquivo atualizado
-        tree.write('guide_br1.xml', encoding='utf-8', xml_declaration=True)
-        EOF
-
-    - name: Process and combine XMLs
-      run: |
-        python <<EOF
-        import xml.etree.ElementTree as ET
-        import gzip
-
-        # Função para carregar XML
-        def carregar_xml(caminho_arquivo):
-            tree = ET.parse(caminho_arquivo)
-            return tree.getroot()
-
-        # Função para aplicar indentação de forma precisa
-        def identar_elemento(elemento, nivel=0):
-            espaco = "  "  # 2 espaços para indentação
-            if len(elemento):  # Se o elemento tem filhos
-                if not elemento.text or not elemento.text.strip():
-                    elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho in elemento:
-                    identar_elemento(filho, nivel + 1)
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-            else:  # Se o elemento não tem filhos
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-
-        # Criar a raiz com o cabeçalho especificado
+        # Criar a estrutura combinada
         root_combined = ET.Element('tv', attrib={
             'generator-info-name': 'm3u4u',
             'generator-info-url': 'https://m3u4u.com/'
         })
-        canais_combined = []
-        programas_combined = []
+        
+        # Função para adicionar elementos de um arquivo ao XML combinado
+        def adicionar_elementos(source_root, combined_root):
+            if source_root is not None:
+                for channel in source_root.findall('channel'):
+                    combined_root.append(channel)
+                for programme in source_root.findall('programme'):
+                    combined_root.append(programme)
 
-        # Processar arquivo epg4.xml
-        root1 = carregar_xml('epg4.xml')
-        canais_combined.extend(root1.findall('./channel'))
-        programas_combined.extend(root1.findall('./programme'))
+        # Adicionar elementos dos arquivos válidos
+        adicionar_elementos(root_epg4, root_combined)
+        adicionar_elementos(root_guide, root_combined)
+        adicionar_elementos(root_br, root_combined)
 
-        # Processar arquivo guide_filtered.xml
-        root2 = carregar_xml('guide_filtered.xml')
-        canais_combined.extend(root2.findall('./channel'))
-        programas_combined.extend(root2.findall('./programme'))
-
-        # Processar arquivo guide_br1.xml
-        root3 = carregar_xml('guide_br1.xml')
-        canais_combined.extend(root3.findall('./channel'))
-        programas_combined.extend(root3.findall('./programme'))
-
-        # Adicionar elementos <channel> ao XML combinado
-        for canal in canais_combined:
-            root_combined.append(canal)
-
-        # Adicionar elementos <programme> ao XML combinado
-        for programa in programas_combined:
-            root_combined.append(programa)
-
-        # Aplicar indentação ao XML combinado
-        identar_elemento(root_combined)
-
-        # Salvar o XML combinado com o cabeçalho e indentação correta
+        # Salvar o arquivo combinado
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
-
-        # Compactar o arquivo gerado no formato .gz
-        with open('epg_combinado.xml', 'rb') as f_in:
-            with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
-                f_out.write(f_in.read())
         EOF
 
     - name: Commit and push if it changed
