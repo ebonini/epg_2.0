@@ -1,3 +1,28 @@
+name: Sync and Combine EPG Files
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'    # Às 22:00 todos os dias no horário de Brasília (UTC-3)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Download files
+      run: |
+        wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
+        wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
+
+    - name: Extract files
+      run: |
+        gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
+        gzip -d br.xml.gz || true    # Descompactar br.xml.gz
+
     - name: Combine XML files with sequencing
       run: |
         python <<EOF
@@ -92,3 +117,12 @@
 
         print("Arquivos epg_combinado.xml e epg_combinado.xml.gz gerados com sucesso!")
         EOF
+
+    - name: Commit and push combined file
+      run: |
+        git config user.name "Automated"
+        git config user.email "eduardo@ebonini.com.br"
+        git add epg_combinado.xml epg_combinado.xml.gz
+        timestamp=$(date -u)
+        git commit -m "Automated combination at $timestamp" || exit 0
+        git push
