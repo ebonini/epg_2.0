@@ -23,7 +23,7 @@ jobs:
         gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
 
-    - name: Combine XML files with formatting
+    - name: Combine XML files with sequencing
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -78,11 +78,12 @@ jobs:
         # Criar a estrutura combinada com o cabeçalho copiado
         root_combined = ET.Element('tv', attrib=cabecalho)
 
-        # Adicionar elementos dos arquivos válidos
+        # Adicionar elementos do primeiro arquivo (epg4.xml)
         if root_epg4 is not None:
             root_combined.extend(root_epg4.findall('./channel'))
             root_combined.extend(root_epg4.findall('./programme'))
 
+        # Adicionar elementos do segundo arquivo (br.xml) em sequência
         if root_br is not None:
             root_combined.extend(root_br.findall('./channel'))
             root_combined.extend(root_br.findall('./programme'))
