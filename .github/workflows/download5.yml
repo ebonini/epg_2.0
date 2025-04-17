@@ -17,7 +17,7 @@ jobs:
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
-        wget -O guide.xml.gz https://raw.github.com/Neywerson/GuideTV/BR1/guide.xml.gz
+        wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
 
     - name: Extract files
       run: |
