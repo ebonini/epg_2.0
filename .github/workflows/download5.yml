@@ -25,7 +25,7 @@ jobs:
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
 
-    - name: Combine XML files with validation
+    - name: Combine XML files with validation and testing
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -71,10 +71,27 @@ jobs:
                     "generator-info-url": "https://example.com/",
                 }
 
+        # Teste: Listar atributos dos elementos
+        def listar_atributos(root, tag, fonte):
+            if root is not None:
+                print(f"\nLista de atributos dos elementos <{tag}> na fonte {fonte}:")
+                for elemento in root.findall(tag):
+                    print(f"Elemento: {elemento.tag}, Atributos: {elemento.attrib}")
+            else:
+                print(f"\nA fonte {fonte} está vazia ou não foi carregada corretamente.")
+
         # Carregar arquivos XML
         root_epg4 = carregar_xml('epg4.xml')
         root_br = carregar_xml('br.xml')
         root_guide = carregar_xml('guide.xml')
+
+        # Listar atributos de <channel> e <programme> em todas as fontes
+        listar_atributos(root_epg4, './channel', 'epg4.xml')
+        listar_atributos(root_br, './channel', 'br.xml')
+        listar_atributos(root_guide, './channel', 'guide.xml')
+        listar_atributos(root_epg4, './programme', 'epg4.xml')
+        listar_atributos(root_br, './programme', 'br.xml')
+        listar_atributos(root_guide, './programme', 'guide.xml')
 
         # Copiar o cabeçalho do epg4.xml
         cabecalho = copiar_cabecalho('epg4.xml')
@@ -96,7 +113,7 @@ jobs:
                     root_combined.append(channel)
                     ids_existentes.add(channel.attrib.get('id'))
 
-        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância com br.xml
+        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância
         if root_guide is not None:
             for channel in root_guide.findall('./channel'):
                 if channel.attrib.get('id') not in ids_existentes:
@@ -114,7 +131,7 @@ jobs:
                 if programme.attrib.get('channel') in ids_existentes:
                     root_combined.append(programme)
 
-        # Adicionar <programme> do guide.xml somente se não houver redundância com br.xml
+        # Adicionar <programme> do guide.xml somente se não houver redundância
         if root_guide is not None:
             for programme in root_guide.findall('./programme'):
                 if programme.attrib.get('channel') in ids_existentes:
