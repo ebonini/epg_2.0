@@ -96,7 +96,7 @@ jobs:
                     root_combined.append(channel)
                     ids_existentes.add(channel.attrib.get('id'))
 
-        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância
+        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância com br.xml
         if root_guide is not None:
             for channel in root_guide.findall('./channel'):
                 if channel.attrib.get('id') not in ids_existentes:
@@ -114,7 +114,7 @@ jobs:
                 if programme.attrib.get('channel') in ids_existentes:
                     root_combined.append(programme)
 
-        # Adicionar <programme> do guide.xml somente se não houver redundância
+        # Adicionar <programme> do guide.xml somente se não houver redundância com br.xml
         if root_guide is not None:
             for programme in root_guide.findall('./programme'):
                 if programme.attrib.get('channel') in ids_existentes:
