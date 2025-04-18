@@ -18,12 +18,14 @@ jobs:
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
         wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
+        wget -O sports.xml.gz https://helmerluzo.github.io/FreeLiveSportsTV_HL/epg/FreeLiveSportsTV.xml.gz
 
     - name: Extract files
       run: |
         gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
+        gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
 
     - name: Combine XML files with validation and testing
       run: |
@@ -84,14 +86,17 @@ jobs:
         root_epg4 = carregar_xml('epg4.xml')
         root_br = carregar_xml('br.xml')
         root_guide = carregar_xml('guide.xml')
+        root_sports = carregar_xml('sports.xml')
 
         # Listar atributos de <channel> e <programme> em todas as fontes
         listar_atributos(root_epg4, './channel', 'epg4.xml')
         listar_atributos(root_br, './channel', 'br.xml')
         listar_atributos(root_guide, './channel', 'guide.xml')
+        listar_atributos(root_sports, './channel', 'sports.xml')
         listar_atributos(root_epg4, './programme', 'epg4.xml')
         listar_atributos(root_br, './programme', 'br.xml')
         listar_atributos(root_guide, './programme', 'guide.xml')
+        listar_atributos(root_sports, './programme', 'sports.xml')
 
         # Copiar o cabeçalho do epg4.xml
         cabecalho = copiar_cabecalho('epg4.xml')
@@ -113,9 +118,16 @@ jobs:
                     root_combined.append(channel)
                     ids_existentes.add(channel.attrib.get('id'))
 
-        # Adicionar <channel> IDs do guide.xml (terceira fonte) somente se não houver redundância
+        # Adicionar <channel> IDs do guide.xml (terceira fonte)
         if root_guide is not None:
             for channel in root_guide.findall('./channel'):
+                if channel.attrib.get('id') not in ids_existentes:
+                    root_combined.append(channel)
+                    ids_existentes.add(channel.attrib.get('id'))
+
+        # Adicionar <channel> IDs do sports.xml (quarta fonte)
+        if root_sports is not None:
+            for channel in root_sports.findall('./channel'):
                 if channel.attrib.get('id') not in ids_existentes:
                     root_combined.append(channel)
                     ids_existentes.add(channel.attrib.get('id'))
@@ -131,9 +143,15 @@ jobs:
                 if programme.attrib.get('channel') in ids_existentes:
                     root_combined.append(programme)
 
-        # Adicionar <programme> do guide.xml somente se não houver redundância
+        # Adicionar <programme> do guide.xml
         if root_guide is not None:
             for programme in root_guide.findall('./programme'):
+                if programme.attrib.get('channel') in ids_existentes:
+                    root_combined.append(programme)
+
+        # Adicionar <programme> do sports.xml
+        if root_sports is not None:
+            for programme in root_sports.findall('./programme'):
                 if programme.attrib.get('channel') in ids_existentes:
                     root_combined.append(programme)
 
