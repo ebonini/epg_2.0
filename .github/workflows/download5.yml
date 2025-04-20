@@ -19,7 +19,7 @@ jobs:
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
         wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
         wget -O sports.xml.gz https://helmerluzo.github.io/FreeLiveSportsTV_HL/epg/FreeLiveSportsTV.xml.gz
-        wget -O band.xml https://github.com/limaalef/BrazilTVEPG/raw/refs/heads/main/band.xml
+        wget -O band.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/band.xml
 
     - name: Extract files
       run: |
@@ -27,7 +27,7 @@ jobs:
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
         gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
-        # band.xml já é um XML descompactado, então não precisa de descompactação.
+        # band.xml já está em formato XML, então não precisa de descompactação.
 
     - name: Combine XML files with validation and testing
       run: |
