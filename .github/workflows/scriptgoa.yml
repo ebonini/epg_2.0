@@ -2,8 +2,8 @@ name: Generate XMLTV File
 
 on:
   schedule:
-    - cron: "0 3 * * *"  # Executa diariamente às 3h da manhã (ajuste conforme necessário)
-  workflow_dispatch:  # Permite execução manual do workflow
+    - cron: "0 3 * * *"  # Executa diariamente às 3h da manhã
+  workflow_dispatch:  # Permite execução manual
 
 jobs:
   generate_xmltv:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'  # Escolha a versão desejada
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
@@ -25,7 +25,11 @@ jobs:
 
     - name: Run script
       run: |
-        python scriptgoa.py
+        python generate_xmltv.py
+
+    - name: Clear GitHub actions cache (opcional para evitar erros de versão)
+      run: rm -rf ~/.cache/gh-actions
+
     - name: Upload XMLTV file
       uses: actions/upload-artifact@v3
       with:
