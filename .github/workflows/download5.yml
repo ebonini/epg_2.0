@@ -196,4 +196,3 @@ jobs:
         timestamp=$(date -u)
         git commit -m "Automated combination at $timestamp" || exit 0
         git push
-``
