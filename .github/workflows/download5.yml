@@ -19,6 +19,7 @@ jobs:
         wget -O br.xml.gz https://i.mjh.nz/PlutoTV/br.xml.gz
         wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
         wget -O sports.xml.gz https://helmerluzo.github.io/FreeLiveSportsTV_HL/epg/FreeLiveSportsTV.xml.gz
+        wget -O band.xml https://github.com/limaalef/BrazilTVEPG/raw/refs/heads/main/band.xml
 
     - name: Extract files
       run: |
@@ -26,6 +27,7 @@ jobs:
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
         gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
+        # band.xml já é um XML descompactado, então não precisa de descompactação.
 
     - name: Combine XML files with validation and testing
       run: |
@@ -87,16 +89,19 @@ jobs:
         root_br = carregar_xml('br.xml')
         root_guide = carregar_xml('guide.xml')
         root_sports = carregar_xml('sports.xml')
+        root_band = carregar_xml('band.xml')
 
         # Listar atributos de <channel> e <programme> em todas as fontes
         listar_atributos(root_epg4, './channel', 'epg4.xml')
         listar_atributos(root_br, './channel', 'br.xml')
         listar_atributos(root_guide, './channel', 'guide.xml')
         listar_atributos(root_sports, './channel', 'sports.xml')
+        listar_atributos(root_band, './channel', 'band.xml')
         listar_atributos(root_epg4, './programme', 'epg4.xml')
         listar_atributos(root_br, './programme', 'br.xml')
         listar_atributos(root_guide, './programme', 'guide.xml')
         listar_atributos(root_sports, './programme', 'sports.xml')
+        listar_atributos(root_band, './programme', 'band.xml')
 
         # Copiar o cabeçalho do epg4.xml
         cabecalho = copiar_cabecalho('epg4.xml')
@@ -132,6 +137,13 @@ jobs:
                     root_combined.append(channel)
                     ids_existentes.add(channel.attrib.get('id'))
 
+        # Adicionar <channel> IDs do band.xml (quinta fonte)
+        if root_band is not None:
+            for channel in root_band.findall('./channel'):
+                if channel.attrib.get('id') not in ids_existentes:
+                    root_combined.append(channel)
+                    ids_existentes.add(channel.attrib.get('id'))
+
         # Adicionar <programme> do epg4.xml
         if root_epg4 is not None:
             for programme in root_epg4.findall('./programme'):
@@ -152,6 +164,12 @@ jobs:
         # Adicionar <programme> do sports.xml
         if root_sports is not None:
             for programme in root_sports.findall('./programme'):
+                if programme.attrib.get('channel') in ids_existentes:
+                    root_combined.append(programme)
+
+        # Adicionar <programme> do band.xml
+        if root_band is not None:
+            for programme in root_band.findall('./programme'):
                 if programme.attrib.get('channel') in ids_existentes:
                     root_combined.append(programme)
 
@@ -178,3 +196,4 @@ jobs:
         timestamp=$(date -u)
         git commit -m "Automated combination at $timestamp" || exit 0
         git push
+``
