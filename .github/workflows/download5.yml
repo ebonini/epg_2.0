@@ -47,45 +47,6 @@ jobs:
                 print(f"Erro ao analisar o arquivo {caminho}: {e}")
                 return None
 
-        # Função para aplicar indentação
-        def identar_elemento(elemento, nivel=0):
-            espaco = "  "  # 2 espaços para indentação
-            if len(elemento):  # Se o elemento tem filhos
-                if not elemento.text or not elemento.text.strip():
-                    elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho in elemento:
-                    identar_elemento(filho, nivel + 1)
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-            else:  # Se o elemento não tem filhos
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-
-        # Função para copiar o cabeçalho do epg4.xml
-        def copiar_cabecalho(caminho_origem):
-            try:
-                tree = ET.parse(caminho_origem)
-                root = tree.getroot()
-                return {
-                    "generator-info-name": root.attrib.get("generator-info-name", "EPG Combiner"),
-                    "generator-info-url": root.attrib.get("generator-info-url", "https://example.com/"),
-                }
-            except Exception as e:
-                print(f"Erro ao copiar cabeçalho: {e}")
-                return {
-                    "generator-info-name": "EPG Combiner",
-                    "generator-info-url": "https://example.com/",
-                }
-
-        # Teste: Listar atributos dos elementos
-        def listar_atributos(root, tag, fonte):
-            if root is not None:
-                print(f"\nLista de atributos dos elementos <{tag}> na fonte {fonte}:")
-                for elemento in root.findall(tag):
-                    print(f"Elemento: {elemento.tag}, Atributos: {elemento.attrib}")
-            else:
-                print(f"\nA fonte {fonte} está vazia ou não foi carregada corretamente.")
-
         # Carregar arquivos XML
         root_epg4 = carregar_xml('epg4.xml')
         root_br = carregar_xml('br.xml')
@@ -94,51 +55,68 @@ jobs:
         root_band = carregar_xml('band.xml')
         root_epg_ripper = carregar_xml('epg_ripper.xml')
 
-        # Listar atributos de <channel> e <programme> em todas as fontes
-        listar_atributos(root_epg4, './channel', 'epg4.xml')
-        listar_atributos(root_br, './channel', 'br.xml')
-        listar_atributos(root_guide, './channel', 'guide.xml')
-        listar_atributos(root_sports, './channel', 'sports.xml')
-        listar_atributos(root_band, './channel', 'band.xml')
-        listar_atributos(root_epg_ripper, './channel', 'epg_ripper.xml')
-        listar_atributos(root_epg4, './programme', 'epg4.xml')
-        listar_atributos(root_br, './programme', 'br.xml')
-        listar_atributos(root_guide, './programme', 'guide.xml')
-        listar_atributos(root_sports, './programme', 'sports.xml')
-        listar_atributos(root_band, './programme', 'band.xml')
-        listar_atributos(root_epg_ripper, './programme', 'epg_ripper.xml')
+        # Criar a estrutura combinada
+        root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
 
-        # Copiar o cabeçalho do epg4.xml
-        cabecalho = copiar_cabecalho('epg4.xml')
-
-        # Criar a estrutura combinada com o cabeçalho copiado
-        root_combined = ET.Element('tv', attrib=cabecalho)
-
-        # Adicionar <channel> e <programme> IDs de cada fonte, sem duplicação
+        # Rastrear IDs já adicionados para evitar duplicação
         ids_existentes = set()
-        for root, nome_fonte in [(root_epg4, 'epg4.xml'), (root_br, 'br.xml'), (root_guide, 'guide.xml'), (root_sports, 'sports.xml'), (root_band, 'band.xml'), (root_epg_ripper, 'epg_ripper.xml')]:
+
+        # Adicionar canais primeiro, mantendo a ordem correta
+        for root, nome_fonte in [
+            (root_epg4, 'epg4.xml'), 
+            (root_br, 'br.xml'), 
+            (root_guide, 'guide.xml'), 
+            (root_sports, 'sports.xml'), 
+            (root_band, 'band.xml'), 
+            (root_epg_ripper, 'epg_ripper.xml')
+        ]:
             if root is not None:
                 for channel in root.findall('./channel'):
-                    if channel.attrib.get('id') not in ids_existentes:
+                    channel_id = channel.attrib.get('id')
+                    if channel_id not in ids_existentes:
                         root_combined.append(channel)
-                        ids_existentes.add(channel.attrib.get('id'))
+                        ids_existentes.add(channel_id)
+
+        # Adicionar programas após os canais
+        for root, nome_fonte in [
+            (root_epg4, 'epg4.xml'), 
+            (root_br, 'br.xml'), 
+            (root_guide, 'guide.xml'), 
+            (root_sports, 'sports.xml'), 
+            (root_band, 'band.xml'), 
+            (root_epg_ripper, 'epg_ripper.xml')
+        ]:
+            if root is not None:
                 for programme in root.findall('./programme'):
                     if programme.attrib.get('channel') in ids_existentes:
                         root_combined.append(programme)
 
         # Aplicar indentação no arquivo combinado
+        def identar_elemento(elemento, nivel=0):
+            espaco = "  "  # Indentação de 2 espaços
+            if len(elemento):
+                if not elemento.text or not elemento.text.strip():
+                    elemento.text = f"\n{espaco * (nivel + 1)}"
+                for filho in elemento:
+                    identar_elemento(filho, nivel + 1)
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
+            else:
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
+
         identar_elemento(root_combined)
 
-        # Salvar o XML combinado com o cabeçalho e indentação correta
+        # Salvar o XML combinado com formatação correta
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
 
-        # Compactar o arquivo gerado no formato .gz
+        # Compactar o arquivo combinado
         with open('epg_combinado.xml', 'rb') as f_in:
             with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
                 f_out.write(f_in.read())
 
-        print("Arquivos epg_combinado.xml e epg_combinado.xml.gz foram gerados com sucesso!")
+        print("EPG combinado gerado com sucesso!")
         EOF
 
     - name: Commit and push combined file
