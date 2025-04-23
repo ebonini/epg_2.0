@@ -20,6 +20,7 @@ jobs:
         wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
         wget -O sports.xml.gz https://helmerluzo.github.io/FreeLiveSportsTV_HL/epg/FreeLiveSportsTV.xml.gz
         wget -O band.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/band.xml
+        wget -O epg_ripper.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
 
     - name: Extract files
       run: |
@@ -27,6 +28,7 @@ jobs:
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
         gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
+        gzip -d epg_ripper.xml.gz || true # Descompactar epg_ripper.xml.gz
         # band.xml já está em formato XML, então não precisa de descompactação.
 
     - name: Combine XML files with validation and testing
@@ -90,6 +92,7 @@ jobs:
         root_guide = carregar_xml('guide.xml')
         root_sports = carregar_xml('sports.xml')
         root_band = carregar_xml('band.xml')
+        root_epg_ripper = carregar_xml('epg_ripper.xml')
 
         # Listar atributos de <channel> e <programme> em todas as fontes
         listar_atributos(root_epg4, './channel', 'epg4.xml')
@@ -97,11 +100,13 @@ jobs:
         listar_atributos(root_guide, './channel', 'guide.xml')
         listar_atributos(root_sports, './channel', 'sports.xml')
         listar_atributos(root_band, './channel', 'band.xml')
+        listar_atributos(root_epg_ripper, './channel', 'epg_ripper.xml')
         listar_atributos(root_epg4, './programme', 'epg4.xml')
         listar_atributos(root_br, './programme', 'br.xml')
         listar_atributos(root_guide, './programme', 'guide.xml')
         listar_atributos(root_sports, './programme', 'sports.xml')
         listar_atributos(root_band, './programme', 'band.xml')
+        listar_atributos(root_epg_ripper, './programme', 'epg_ripper.xml')
 
         # Copiar o cabeçalho do epg4.xml
         cabecalho = copiar_cabecalho('epg4.xml')
@@ -109,69 +114,17 @@ jobs:
         # Criar a estrutura combinada com o cabeçalho copiado
         root_combined = ET.Element('tv', attrib=cabecalho)
 
-        # Adicionar <channel> IDs do epg4.xml (primeira fonte)
-        ids_existentes = set()  # Para rastrear os IDs já adicionados
-        if root_epg4 is not None:
-            for channel in root_epg4.findall('./channel'):
-                root_combined.append(channel)
-                ids_existentes.add(channel.attrib.get('id'))
-
-        # Adicionar <channel> IDs do br.xml (segunda fonte)
-        if root_br is not None:
-            for channel in root_br.findall('./channel'):
-                if channel.attrib.get('id') not in ids_existentes:
-                    root_combined.append(channel)
-                    ids_existentes.add(channel.attrib.get('id'))
-
-        # Adicionar <channel> IDs do guide.xml (terceira fonte)
-        if root_guide is not None:
-            for channel in root_guide.findall('./channel'):
-                if channel.attrib.get('id') not in ids_existentes:
-                    root_combined.append(channel)
-                    ids_existentes.add(channel.attrib.get('id'))
-
-        # Adicionar <channel> IDs do sports.xml (quarta fonte)
-        if root_sports is not None:
-            for channel in root_sports.findall('./channel'):
-                if channel.attrib.get('id') not in ids_existentes:
-                    root_combined.append(channel)
-                    ids_existentes.add(channel.attrib.get('id'))
-
-        # Adicionar <channel> IDs do band.xml (quinta fonte)
-        if root_band is not None:
-            for channel in root_band.findall('./channel'):
-                if channel.attrib.get('id') not in ids_existentes:
-                    root_combined.append(channel)
-                    ids_existentes.add(channel.attrib.get('id'))
-
-        # Adicionar <programme> do epg4.xml
-        if root_epg4 is not None:
-            for programme in root_epg4.findall('./programme'):
-                root_combined.append(programme)
-
-        # Adicionar <programme> do br.xml
-        if root_br is not None:
-            for programme in root_br.findall('./programme'):
-                if programme.attrib.get('channel') in ids_existentes:
-                    root_combined.append(programme)
-
-        # Adicionar <programme> do guide.xml
-        if root_guide is not None:
-            for programme in root_guide.findall('./programme'):
-                if programme.attrib.get('channel') in ids_existentes:
-                    root_combined.append(programme)
-
-        # Adicionar <programme> do sports.xml
-        if root_sports is not None:
-            for programme in root_sports.findall('./programme'):
-                if programme.attrib.get('channel') in ids_existentes:
-                    root_combined.append(programme)
-
-        # Adicionar <programme> do band.xml
-        if root_band is not None:
-            for programme in root_band.findall('./programme'):
-                if programme.attrib.get('channel') in ids_existentes:
-                    root_combined.append(programme)
+        # Adicionar <channel> e <programme> IDs de cada fonte, sem duplicação
+        ids_existentes = set()
+        for root, nome_fonte in [(root_epg4, 'epg4.xml'), (root_br, 'br.xml'), (root_guide, 'guide.xml'), (root_sports, 'sports.xml'), (root_band, 'band.xml'), (root_epg_ripper, 'epg_ripper.xml')]:
+            if root is not None:
+                for channel in root.findall('./channel'):
+                    if channel.attrib.get('id') not in ids_existentes:
+                        root_combined.append(channel)
+                        ids_existentes.add(channel.attrib.get('id'))
+                for programme in root.findall('./programme'):
+                    if programme.attrib.get('channel') in ids_existentes:
+                        root_combined.append(programme)
 
         # Aplicar indentação no arquivo combinado
         identar_elemento(root_combined)
