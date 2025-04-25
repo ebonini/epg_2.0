@@ -20,7 +20,8 @@ jobs:
         wget -O guide.xml.gz https://raw.githubusercontent.com/rootcoder/epgtv/main/guide.xml.gz
         wget -O sports.xml.gz https://helmerluzo.github.io/FreeLiveSportsTV_HL/epg/FreeLiveSportsTV.xml.gz
         wget -O band.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/band.xml
-        wget -O epg_ripper.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
+        wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
+        wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
 
     - name: Extract files
       run: |
@@ -28,7 +29,8 @@ jobs:
         gzip -d br.xml.gz || true    # Descompactar br.xml.gz
         gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
         gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
-        gzip -d epg_ripper.xml.gz || true # Descompactar epg_ripper.xml.gz
+        gzip -d epg_ripper_SV1.xml.gz || true # Descompactar epg_ripper_SV1.xml.gz
+        gzip -d epg_ripper_PE1.xml.gz || true # Descompactar epg_ripper_PE1.xml.gz
         # band.xml já está em formato XML, então não precisa de descompactação.
 
     - name: Combine XML files with validation and testing
@@ -53,7 +55,8 @@ jobs:
         root_guide = carregar_xml('guide.xml')
         root_sports = carregar_xml('sports.xml')
         root_band = carregar_xml('band.xml')
-        root_epg_ripper = carregar_xml('epg_ripper.xml')
+        root_epg_ripper_SV1 = carregar_xml('epg_ripper_SV1.xml')
+        root_epg_ripper_PE1 = carregar_xml('epg_ripper_PE1.xml')
 
         # Criar a estrutura combinada
         root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
@@ -68,7 +71,8 @@ jobs:
             (root_guide, 'guide.xml'), 
             (root_sports, 'sports.xml'), 
             (root_band, 'band.xml'), 
-            (root_epg_ripper, 'epg_ripper.xml')
+            (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
+            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml')
         ]:
             if root is not None:
                 for channel in root.findall('./channel'):
@@ -84,7 +88,8 @@ jobs:
             (root_guide, 'guide.xml'), 
             (root_sports, 'sports.xml'), 
             (root_band, 'band.xml'), 
-            (root_epg_ripper, 'epg_ripper.xml')
+            (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
+            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml')
         ]:
             if root is not None:
                 for programme in root.findall('./programme'):
