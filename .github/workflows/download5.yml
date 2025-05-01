@@ -23,26 +23,26 @@ jobs:
         wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
         wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
         wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
+        wget -O epg3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR6/epg3.xml
 
     - name: Extract files
       run: |
-        gzip -d epg4.xml.gz || true  # Descompactar epg4.xml.gz
-        gzip -d br.xml.gz || true    # Descompactar br.xml.gz
-        gzip -d guide.xml.gz || true # Descompactar guide.xml.gz
-        gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
-        gzip -d epg_ripper_SV1.xml.gz || true # Descompactar epg_ripper_SV1.xml.gz
-        gzip -d epg_ripper_PE1.xml.gz || true # Descompactar epg_ripper_PE1.xml.gz
-        # guide_br3.xml já está em formato XML, então não precisa de descompactação.
-        # band.xml já está em formato XML, então não precisa de descompactação.
+        gzip -d epg4.xml.gz || true
+        gzip -d br.xml.gz || true
+        gzip -d guide.xml.gz || true
+        gzip -d sports.xml.gz || true
+        gzip -d epg_ripper_SV1.xml.gz || true
+        gzip -d epg_ripper_PE1.xml.gz || true
+        # guide_br3.xml e epg3.xml já estão em formato XML e não precisam de descompactação.
+        # band.xml já está em formato XML.
 
-    - name: Combine XML files with validation and testing
+    - name: Combine XML files with validation and filtering
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
         import gzip
         import os
 
-        # Função para carregar um arquivo XML
         def carregar_xml(caminho):
             try:
                 tree = ET.parse(caminho)
@@ -51,33 +51,24 @@ jobs:
                 print(f"Erro ao analisar o arquivo {caminho}: {e}")
                 return None
 
-        # Carregar arquivos XML
-        root_epg4 = carregar_xml('epg4.xml')
-        root_br = carregar_xml('br.xml')
-        root_guide = carregar_xml('guide.xml')
-        root_sports = carregar_xml('sports.xml')
-        root_band = carregar_xml('band.xml')
-        root_epg_ripper_SV1 = carregar_xml('epg_ripper_SV1.xml')
-        root_epg_ripper_PE1 = carregar_xml('epg_ripper_PE1.xml')
-        root_guide_br3 = carregar_xml('guide_br3.xml')
+        # Carregar os arquivos XML
+        fontes = {
+            "epg4.xml": carregar_xml('epg4.xml'),
+            "br.xml": carregar_xml('br.xml'),
+            "guide.xml": carregar_xml('guide.xml'),
+            "sports.xml": carregar_xml('sports.xml'),
+            "band.xml": carregar_xml('band.xml'),
+            "epg_ripper_SV1.xml": carregar_xml('epg_ripper_SV1.xml'),
+            "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
+            "guide_br3.xml": carregar_xml('guide_br3.xml'),
+            "epg3.xml": carregar_xml('epg3.xml')
+        }
 
-        # Criar a estrutura combinada
         root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
-
-        # Rastrear IDs já adicionados para evitar duplicação
         ids_existentes = set()
 
-        # Adicionar canais primeiro, mantendo a ordem correta
-        for root, nome_fonte in [
-            (root_epg4, 'epg4.xml'), 
-            (root_br, 'br.xml'), 
-            (root_guide, 'guide.xml'), 
-            (root_sports, 'sports.xml'), 
-            (root_band, 'band.xml'), 
-            (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
-            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml'),
-            (root_guide_br3, 'guide_br3.xml')
-        ]:
+        # Adicionar <channel> de todas as fontes
+        for nome_fonte, root in fontes.items():
             if root is not None:
                 for channel in root.findall('./channel'):
                     channel_id = channel.attrib.get('id')
@@ -85,25 +76,16 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # Adicionar programas após os canais
-        for root, nome_fonte in [
-            (root_epg4, 'epg4.xml'), 
-            (root_br, 'br.xml'), 
-            (root_guide, 'guide.xml'), 
-            (root_sports, 'sports.xml'), 
-            (root_band, 'band.xml'), 
-            (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
-            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml'),
-            (root_guide_br3, 'guide_br3.xml')
-        ]:
+        # Adicionar <programme> apenas para "SONY Movies"
+        for nome_fonte, root in fontes.items():
             if root is not None:
                 for programme in root.findall('./programme'):
-                    if programme.attrib.get('channel') in ids_existentes:
+                    if programme.attrib.get('channel') == "SONY Movies":
                         root_combined.append(programme)
 
-        # Aplicar indentação no arquivo combinado
+        # Aplicar indentação ao arquivo combinado
         def identar_elemento(elemento, nivel=0):
-            espaco = "  "  # Indentação de 2 espaços
+            espaco = "  "
             if len(elemento):
                 if not elemento.text or not elemento.text.strip():
                     elemento.text = f"\n{espaco * (nivel + 1)}"
@@ -117,7 +99,7 @@ jobs:
 
         identar_elemento(root_combined)
 
-        # Salvar o XML combinado com formatação correta
+        # Salvar o XML combinado
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
 
