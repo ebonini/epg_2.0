@@ -76,17 +76,31 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # Adicionar <programme> de todas as fontes, **mas filtrando corretamente na última fonte**
-        for nome_fonte, root in fontes.items():
-            if root is not None:
-                for programme in root.findall('./programme'):
-                    if nome_fonte == "epg3.xml":  # Filtragem exclusiva nesta fonte
-                        if programme.attrib.get('channel').strip().lower() == "sony movies":
-                            root_combined.append(programme)  # Mantendo programas do canal SONY Movies!
-                            print(f"Adicionado programa: {programme.attrib.get('title')} do canal SONY Movies")
-                    else:  # Para as outras fontes, adiciona normalmente
-                        if programme.attrib.get('channel') in ids_existentes:
-                            root_combined.append(programme)
+        # **Verificação adicional para garantir que o canal SONY Movies esteja incluído**
+        root_epg3 = fontes.get("epg3.xml")
+        if root_epg3 is not None:
+            sony_channel_found = False
+            for channel in root_epg3.findall('./channel'):
+                if channel.attrib.get('id') == "SONY Movies":
+                    root_combined.append(channel)
+                    ids_existentes.add("SONY Movies")
+                    sony_channel_found = True
+                    print(f"Canal SONY Movies adicionado corretamente!")
+            
+            if not sony_channel_found:
+                print(f"ERRO: Canal SONY Movies NÃO encontrado na última fonte!")
+
+        # Adicionar <programme> apenas para "SONY Movies" na última fonte
+        if root_epg3 is not None:
+            sony_programmes_found = False
+            for programme in root_epg3.findall('./programme'):
+                if programme.attrib.get('channel') == "SONY Movies":
+                    root_combined.append(programme)
+                    sony_programmes_found = True
+                    print(f"Adicionado programa: {programme.attrib.get('title')} do canal SONY Movies")
+            
+            if not sony_programmes_found:
+                print(f"ERRO: Nenhum programa encontrado para SONY Movies na última fonte!")
 
         # Aplicar indentação no arquivo combinado
         def identar_elemento(elemento, nivel=0):
