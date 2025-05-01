@@ -23,7 +23,6 @@ jobs:
         wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
         wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
         wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
-        wget -O epg3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR6/epg3.xml
 
     - name: Extract files
       run: |
@@ -33,10 +32,9 @@ jobs:
         gzip -d sports.xml.gz || true
         gzip -d epg_ripper_SV1.xml.gz || true
         gzip -d epg_ripper_PE1.xml.gz || true
-        # guide_br3.xml e epg3.xml já estão em formato XML e não precisam de descompactação.
-        # band.xml já está em formato XML.
+        # guide_br3.xml e band.xml já estão em formato XML e não precisam de descompactação.
 
-    - name: Combine XML files with filtering rule applied only to epg3.xml
+    - name: Combine XML files
       run: |
         python <<EOF
         import xml.etree.ElementTree as ET
@@ -60,8 +58,7 @@ jobs:
             "band.xml": carregar_xml('band.xml'),
             "epg_ripper_SV1.xml": carregar_xml('epg_ripper_SV1.xml'),
             "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
-            "guide_br3.xml": carregar_xml('guide_br3.xml'),
-            "epg3.xml": carregar_xml('epg3.xml')  # Última fonte com filtragem de programas
+            "guide_br3.xml": carregar_xml('guide_br3.xml')
         }
 
         root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
@@ -76,31 +73,12 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # **Verificação adicional para garantir que o canal SONY Movies esteja incluído**
-        root_epg3 = fontes.get("epg3.xml")
-        if root_epg3 is not None:
-            sony_channel_found = False
-            for channel in root_epg3.findall('./channel'):
-                if channel.attrib.get('id') == "SONY Movies":
-                    root_combined.append(channel)
-                    ids_existentes.add("SONY Movies")
-                    sony_channel_found = True
-                    print(f"Canal SONY Movies adicionado corretamente!")
-            
-            if not sony_channel_found:
-                print(f"ERRO: Canal SONY Movies NÃO encontrado na última fonte!")
-
-        # Adicionar <programme> apenas para "SONY Movies" na última fonte
-        if root_epg3 is not None:
-            sony_programmes_found = False
-            for programme in root_epg3.findall('./programme'):
-                if programme.attrib.get('channel') == "SONY Movies":
-                    root_combined.append(programme)
-                    sony_programmes_found = True
-                    print(f"Adicionado programa: {programme.attrib.get('title')} do canal SONY Movies")
-            
-            if not sony_programmes_found:
-                print(f"ERRO: Nenhum programa encontrado para SONY Movies na última fonte!")
+        # Adicionar <programme> de todas as fontes normalmente
+        for nome_fonte, root in fontes.items():
+            if root is not None:
+                for programme in root.findall('./programme'):
+                    if programme.attrib.get('channel') in ids_existentes:
+                        root_combined.append(programme)
 
         # Aplicar indentação no arquivo combinado
         def identar_elemento(elemento, nivel=0):
