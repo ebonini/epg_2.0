@@ -22,6 +22,7 @@ jobs:
         wget -O band.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/band.xml
         wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
         wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
+        wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
 
     - name: Extract files
       run: |
@@ -31,6 +32,7 @@ jobs:
         gzip -d sports.xml.gz || true # Descompactar sports.xml.gz
         gzip -d epg_ripper_SV1.xml.gz || true # Descompactar epg_ripper_SV1.xml.gz
         gzip -d epg_ripper_PE1.xml.gz || true # Descompactar epg_ripper_PE1.xml.gz
+        # guide_br3.xml já está em formato XML, então não precisa de descompactação.
         # band.xml já está em formato XML, então não precisa de descompactação.
 
     - name: Combine XML files with validation and testing
@@ -57,6 +59,7 @@ jobs:
         root_band = carregar_xml('band.xml')
         root_epg_ripper_SV1 = carregar_xml('epg_ripper_SV1.xml')
         root_epg_ripper_PE1 = carregar_xml('epg_ripper_PE1.xml')
+        root_guide_br3 = carregar_xml('guide_br3.xml')
 
         # Criar a estrutura combinada
         root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
@@ -72,7 +75,8 @@ jobs:
             (root_sports, 'sports.xml'), 
             (root_band, 'band.xml'), 
             (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
-            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml')
+            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml'),
+            (root_guide_br3, 'guide_br3.xml')
         ]:
             if root is not None:
                 for channel in root.findall('./channel'):
@@ -89,7 +93,8 @@ jobs:
             (root_sports, 'sports.xml'), 
             (root_band, 'band.xml'), 
             (root_epg_ripper_SV1, 'epg_ripper_SV1.xml'),
-            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml')
+            (root_epg_ripper_PE1, 'epg_ripper_PE1.xml'),
+            (root_guide_br3, 'guide_br3.xml')
         ]:
             if root is not None:
                 for programme in root.findall('./programme'):
