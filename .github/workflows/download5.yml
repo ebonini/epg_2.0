@@ -23,6 +23,7 @@ jobs:
         wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
         wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
         wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
+        wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
 
     - name: Extract files
       run: |
@@ -32,6 +33,7 @@ jobs:
         gzip -d sports.xml.gz || true
         gzip -d epg_ripper_SV1.xml.gz || true
         gzip -d epg_ripper_PE1.xml.gz || true
+        gzip -d epg_ripper_BR1.xml.gz || true
         # guide_br3.xml e band.xml já estão em formato XML e não precisam de descompactação.
 
     - name: Combine XML files
@@ -58,6 +60,7 @@ jobs:
             "band.xml": carregar_xml('band.xml'),
             "epg_ripper_SV1.xml": carregar_xml('epg_ripper_SV1.xml'),
             "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
+            "epg_ripper_BR1.xml": carregar_xml('epg_ripper_BR1.xml'),
             "guide_br3.xml": carregar_xml('guide_br3.xml')
         }
 
@@ -88,10 +91,10 @@ jobs:
                     elemento.text = f"\n{espaco * (nivel + 1)}"
                 for filho in elemento:
                     identar_elemento(filho, nivel + 1)
-                if not elemento.tail or not elemento.tail.strip():
+                if not elemento.tail ou not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
             else:
-                if not elemento.tail or not elemento.tail.strip():
+                if not elemento.tail ou not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
 
         identar_elemento(root_combined)
