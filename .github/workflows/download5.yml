@@ -61,7 +61,7 @@ jobs:
             "epg_ripper_SV1.xml": carregar_xml('epg_ripper_SV1.xml'),
             "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
             "guide_br3.xml": carregar_xml('guide_br3.xml'),
-            "epg3.xml": carregar_xml('epg3.xml')  # Última fonte que terá filtragem de programas
+            "epg3.xml": carregar_xml('epg3.xml')  # Última fonte com filtragem de programas
         }
 
         root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
@@ -76,13 +76,13 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # Adicionar <programme> de todas as fontes, **mas filtrando na última fonte**
+        # Adicionar <programme> de todas as fontes, **mas filtrando corretamente na última fonte**
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for programme in root.findall('./programme'):
                     if nome_fonte == "epg3.xml":  # Filtragem apenas nesta fonte
                         if programme.attrib.get('channel') == "SONY Movies":
-                            root_combined.append(programme)
+                            root_combined.append(programme)  # Agora está mantendo SONY Movies!
                     else:  # Para as outras fontes, adiciona normalmente
                         if programme.attrib.get('channel') in ids_existentes:
                             root_combined.append(programme)
