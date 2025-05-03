@@ -25,6 +25,7 @@ jobs:
         wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
         wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
         wget -O maissbt.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/maissbt.xml
+        wget -O skysportnow.xml https://i.mjh.nz/SkySportNow/epg.xml
 
     - name: Extract files
       run: |
@@ -35,7 +36,7 @@ jobs:
         gzip -d epg_ripper_SV1.xml.gz || true
         gzip -d epg_ripper_PE1.xml.gz || true
         gzip -d epg_ripper_BR1.xml.gz || true
-        # guide_br3.xml, maissbt.xml e band.xml já estão em formato XML e não precisam de descompactação.
+        # guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML e não precisam de descompactação.
 
     - name: Combine XML files
       run: |
@@ -63,7 +64,8 @@ jobs:
             "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
             "epg_ripper_BR1.xml": carregar_xml('epg_ripper_BR1.xml'),
             "guide_br3.xml": carregar_xml('guide_br3.xml'),
-            "maissbt.xml": carregar_xml('maissbt.xml')
+            "maissbt.xml": carregar_xml('maissbt.xml'),
+            "skysportnow.xml": carregar_xml('skysportnow.xml')
         }
 
         # Criar o elemento raiz do XML combinado
