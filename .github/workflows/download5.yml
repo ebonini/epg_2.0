@@ -17,9 +17,14 @@ jobs:
       run: |
         git lfs install
 
+    - name: Configure Git User Identity
+      run: |
+        git config --global user.email "eduardo@ebonini.com.br"
+        git config --global user.name "Eduardo"
+
     - name: Configure Git LFS for large files
       run: |
-        git lfs track "epg_combinado.xml"
+        git lfs track "epg_combinado.xml.gz"
         git add .gitattributes
         git commit -m "Configuração do Git LFS para arquivos grandes"
 
@@ -132,11 +137,6 @@ jobs:
 
         print("EPG combinado gerado com sucesso!")
         EOF
-
-    - name: Configure Git User Identity
-      run: |
-        git config --global user.email "eduardo@ebonini.com.br"
-        git config --global user.name "duardo"
 
     - name: Commit and push combined file using Git LFS
       run: |
