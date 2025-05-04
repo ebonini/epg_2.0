@@ -19,11 +19,12 @@ jobs:
 
     - name: Configure Git User Identity
       run: |
-        git config --global user.email "eduardo@ebonini.com.br"
-        git config --global user.name "Eduardo"
+        git config --global user.email "seu-email@example.com"
+        git config --global user.name "Seu Nome"
 
     - name: Configure Git LFS for large files
       run: |
+        git lfs track "epg_combinado.xml"
         git lfs track "epg_combinado.xml.gz"
         git add .gitattributes
         git commit -m "Configuração do Git LFS para arquivos grandes"
@@ -106,23 +107,8 @@ jobs:
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for programme in root.findall('./programme'):
-                    # Adiciona o elemento se o atributo 'channel' existe em ids_existentes.
                     if programme.attrib.get('channel') in ids_existentes:
                         root_combined.append(programme)
-
-        # Função para aplicar indentação ao XML
-        def identar_elemento(elemento, nivel=0):
-            espaco = "  "
-            if len(elemento):
-                if not elemento.text or not elemento.text.strip():
-                    elemento.text = f"\n{espaco * (nivel + 1)}"
-                for filho in elemento:
-                    identar_elemento(filho, nivel + 1)
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
-            else:
-                if not elemento.tail or not elemento.tail.strip():
-                    elemento.tail = f"\n{espaco * nivel}"
 
         identar_elemento(root_combined)
 
@@ -140,7 +126,12 @@ jobs:
 
     - name: Commit and push combined file using Git LFS
       run: |
-        git add epg_combinado.xml.gz
+        git lfs untrack "epg_combinado.xml" || true
+        git lfs untrack "epg_combinado.xml.gz" || true
+        git lfs track "epg_combinado.xml"
+        git lfs track "epg_combinado.xml.gz"
+        git add .gitattributes
+        git add epg_combinado.xml epg_combinado.xml.gz
         timestamp=$(date -u)
         git commit -m "Automated combination at $timestamp"
         git push
