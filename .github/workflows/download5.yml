@@ -13,6 +13,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Install Git LFS
+      run: |
+        git lfs install
+
+    - name: Configure Git LFS for large files
+      run: |
+        git lfs track "epg_combinado.xml"
+        git add .gitattributes
+        git commit -m "Configuração do Git LFS para arquivos grandes"
+
     - name: Download files
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
@@ -23,10 +33,10 @@ jobs:
         wget -O epg_ripper_SV1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_SV1.xml.gz
         wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
         wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
+        wget -O epg_ripper_AU1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz
         wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
         wget -O maissbt.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/maissbt.xml
         wget -O skysportnow.xml https://i.mjh.nz/SkySportNow/epg.xml
-        wget -O epg_ripper_AU1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz
 
     - name: Extract files
       run: |
@@ -123,11 +133,9 @@ jobs:
         print("EPG combinado gerado com sucesso!")
         EOF
 
-    - name: Commit and push combined file
+    - name: Commit and push combined file using Git LFS
       run: |
-        git config user.name "Automated"
-        git config user.email "eduardo@ebonini.com.br"
-        git add epg_combinado.xml epg_combinado.xml.gz
+        git add epg_combinado.xml.gz
         timestamp=$(date -u)
-        git commit -m "Automated combination at $timestamp" || exit 0
+        git commit -m "Automated combination at $timestamp"
         git push
