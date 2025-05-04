@@ -71,6 +71,20 @@ jobs:
                 print(f"Erro ao analisar o arquivo {caminho}: {e}")
                 return None
 
+        # Função para aplicar indentação ao XML
+        def identar_elemento(elemento, nivel=0):
+            espaco = "  "
+            if len(elemento):
+                if not elemento.text or not elemento.text.strip():
+                    elemento.text = f"\n{espaco * (nivel + 1)}"
+                for filho in elemento:
+                    identar_elemento(filho, nivel + 1)
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
+            else:
+                if not elemento.tail or not elemento.tail.strip():
+                    elemento.tail = f"\n{espaco * nivel}"
+
         # Carregar os arquivos XML das fontes
         fontes = {
             "epg4.xml": carregar_xml('epg4.xml'),
@@ -87,14 +101,9 @@ jobs:
             "skysportnow.xml": carregar_xml('skysportnow.xml')
         }
 
-        # Criar o elemento raiz do XML combinado
-        root_combined = ET.Element('tv', attrib={
-            "generator-info-name": "EPG Combiner",
-            "generator-info-url": "https://example.com/"
-        })
+        root_combined = ET.Element('tv', attrib={"generator-info-name": "EPG Combiner", "generator-info-url": "https://example.com/"})
         ids_existentes = set()
 
-        # Primeiro, adicionar todos os <channel> de todas as fontes, removendo duplicados.
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for channel in root.findall('./channel'):
@@ -103,7 +112,6 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # Em seguida, adicionar todos os <programme> de todas as fontes.
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for programme in root.findall('./programme'):
@@ -112,11 +120,9 @@ jobs:
 
         identar_elemento(root_combined)
 
-        # Salvar o XML combinado com a declaração de XML e codificação UTF-8.
         tree_combined = ET.ElementTree(root_combined)
         tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
 
-        # Compactar o XML gerado em formato .gz.
         with open('epg_combinado.xml', 'rb') as f_in:
             with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
                 f_out.write(f_in.read())
@@ -126,11 +132,6 @@ jobs:
 
     - name: Commit and push combined file using Git LFS
       run: |
-        git lfs untrack "epg_combinado.xml" || true
-        git lfs untrack "epg_combinado.xml.gz" || true
-        git lfs track "epg_combinado.xml"
-        git lfs track "epg_combinado.xml.gz"
-        git add .gitattributes
         git add epg_combinado.xml epg_combinado.xml.gz
         timestamp=$(date -u)
         git commit -m "Automated combination at $timestamp"
