@@ -133,6 +133,11 @@ jobs:
         print("EPG combinado gerado com sucesso!")
         EOF
 
+    - name: Configure Git User Identity
+      run: |
+        git config --global user.email "eduardo@ebonini.com.br"
+        git config --global user.name "duardo"
+
     - name: Commit and push combined file using Git LFS
       run: |
         git add epg_combinado.xml.gz
