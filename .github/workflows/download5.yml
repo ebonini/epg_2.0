@@ -27,7 +27,7 @@ jobs:
         git lfs track "epg_combinado.xml"
         git lfs track "epg_combinado.xml.gz"
         git add .gitattributes
-        git commit -m "Configuração do Git LFS para arquivos grandes"
+        git commit -m "Configuração do Git LFS para arquivos grandes" || true
 
     - name: Download files
       run: |
@@ -71,7 +71,6 @@ jobs:
                 print(f"Erro ao analisar o arquivo {caminho}: {e}")
                 return None
 
-        # Função para aplicar indentação ao XML
         def identar_elemento(elemento, nivel=0):
             espaco = "  "
             if len(elemento):
@@ -85,7 +84,6 @@ jobs:
                 if not elemento.tail or not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
 
-        # Carregar os arquivos XML das fontes
         fontes = {
             "epg4.xml": carregar_xml('epg4.xml'),
             "br.xml": carregar_xml('br.xml'),
@@ -130,9 +128,9 @@ jobs:
         print("EPG combinado gerado com sucesso!")
         EOF
 
-    - name: Commit and push combined file using Git LFS
+    - name: Force commit and push combined file using Git LFS
       run: |
-        git add epg_combinado.xml epg_combinado.xml.gz
+        git add -f epg_combinado.xml epg_combinado.xml.gz
         timestamp=$(date -u)
-        git commit -m "Automated combination at $timestamp"
-        git push
+        git commit -m "Automated combination at $timestamp" || true
+        git push --force
