@@ -3,7 +3,7 @@ name: Sync and Combine EPG Files
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */3 * * *'    # A cada 3 horas
+    - cron: '0 */3 * * *'  # A cada 3 horas
 
 jobs:
   build:
@@ -21,13 +21,6 @@ jobs:
         run: |
           git config --global user.email "seu-email@example.com"
           git config --global user.name "Seu Nome"
-
-      - name: Configure Git LFS for large files
-        run: |
-          git lfs track "epg_combinado.xml"
-          git lfs track "epg_combinado.xml.gz"
-          git add .gitattributes
-          git commit -m "Configuração do Git LFS para arquivos grandes" || true
 
       - name: Download files
         run: |
@@ -129,16 +122,34 @@ jobs:
           
           print("EPG combinado gerado com sucesso!")
           EOF
-          
-      - name: Clean up old LFS files
-        run: |
-          git lfs prune
-          echo "Arquivos antigos do Git LFS foram removidos para liberar espaço."
-      
-      - name: Upload combined EPG files as artifact
-        uses: actions/upload-artifact@v2
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: epg_combined
-          path: |
-            epg_combinado.xml
-            epg_combinado.xml.gz
+          tag_name: "epg-${{ github.run_number }}"
+          release_name: "Automated EPG Release ${{ github.run_number }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset - XML
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: epg_combinado.xml
+          asset_name: epg_combinado.xml
+          asset_content_type: text/xml
+
+      - name: Upload Release Asset - Compressed XML
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: epg_combinado.xml.gz
+          asset_name: epg_combinado.xml.gz
+          asset_content_type: application/gzip
