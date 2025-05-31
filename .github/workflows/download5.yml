@@ -22,6 +22,13 @@ jobs:
         git config --global user.email "seu-email@example.com"
         git config --global user.name "Seu Nome"
 
+    - name: Configure Git LFS for large files
+      run: |
+        git lfs track "epg_combinado.xml"
+        git lfs track "epg_combinado.xml.gz"
+        git add .gitattributes
+        git commit -m "Configuração do Git LFS para arquivos grandes" || true
+
     - name: Download files
       run: |
         wget -O epg4.xml.gz http://m3u4u.com/epg/w16vy5vpp1cx6972n39p
@@ -47,15 +54,14 @@ jobs:
         gzip -d epg_ripper_PE1.xml.gz || true
         gzip -d epg_ripper_BR1.xml.gz || true
         gzip -d epg_ripper_AU1.xml.gz || true
-        # Os arquivos guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML.
+        # guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML e não precisam de descompactação.
 
     - name: Combine XML files
       run: |
         python <<'EOF'
         import xml.etree.ElementTree as ET
         import gzip
-        import os
-
+        
         def carregar_xml(caminho):
             try:
                 tree = ET.parse(caminho)
@@ -77,7 +83,6 @@ jobs:
                 if not elemento.tail or not elemento.tail.strip():
                     elemento.tail = f"\n{espaco * nivel}"
 
-        # Carregar os arquivos XML das fontes
         fontes = {
             "epg4.xml": carregar_xml('epg4.xml'),
             "br.xml": carregar_xml('br.xml'),
@@ -99,7 +104,6 @@ jobs:
         })
         ids_existentes = set()
 
-        # Adicionar todos os <channel> (removendo duplicados)
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for channel in root.findall('./channel'):
@@ -108,7 +112,6 @@ jobs:
                         root_combined.append(channel)
                         ids_existentes.add(channel_id)
 
-        # Adicionar todos os <programme>
         for nome_fonte, root in fontes.items():
             if root is not None:
                 for programme in root.findall('./programme'):
@@ -133,7 +136,7 @@ jobs:
         echo "Arquivos antigos do Git LFS foram removidos para liberar espaço."
 
     - name: Upload combined EPG files as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.2
       with:
         name: epg_combined
         path: |
