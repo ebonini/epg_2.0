@@ -129,14 +129,14 @@ jobs:
           
           print("EPG combinado gerado com sucesso!")
           EOF
-
+          
       - name: Clean up old LFS files
         run: |
           git lfs prune
           echo "Arquivos antigos do Git LFS foram removidos para liberar espaço."
-
+      
       - name: Upload combined EPG files as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: epg_combined
           path: |
