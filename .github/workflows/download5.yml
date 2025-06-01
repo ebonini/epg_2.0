@@ -49,11 +49,12 @@ jobs:
           gzip -d epg_ripper_AU1.xml.gz || true
           # Os arquivos guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML.
 
-      - name: Combine XML files
+      - name: Combine XML files and generate only compressed file
         run: |
           python <<'EOF'
           import xml.etree.ElementTree as ET
           import gzip
+          import io
           
           def carregar_xml(caminho):
               try:
@@ -114,31 +115,30 @@ jobs:
           identar_elemento(root_combined)
           
           tree_combined = ET.ElementTree(root_combined)
-          tree_combined.write('epg_combinado.xml', encoding='utf-8', xml_declaration=True)
+          buf = io.BytesIO()
+          tree_combined.write(buf, encoding='utf-8', xml_declaration=True)
+          compressed_data = gzip.compress(buf.getvalue())
           
-          with open('epg_combinado.xml', 'rb') as f_in:
-              with gzip.open('epg_combinado.xml.gz', 'wb') as f_out:
-                  f_out.write(f_in.read())
+          with open('epg_combinado.xml.gz', 'wb') as f_out:
+              f_out.write(compressed_data)
           
           print("EPG combinado gerado com sucesso!")
           EOF
 
-      - name: Backup generated files
+      - name: Backup generated file
         run: |
-          mkdir backup
-          cp epg_combinado.xml epg_combinado.xml.gz backup/
+          mkdir -p backup
+          cp epg_combinado.xml.gz backup/
 
-      - name: Update repository with new XML files using Git LFS
+      - name: Update repository with new .xml.gz file using Git LFS
         run: |
-          # Remover somente os arquivos .xml e .xml.gz que queremos atualizar
-          git rm -f epg_combinado.xml epg_combinado.xml.gz || true
-          # Copia os arquivos do backup para o diretório de trabalho
-          cp backup/epg_combinado.xml .
+          # Remove somente os arquivos .xml.gz que queremos atualizar
+          git rm -f epg_combinado.xml.gz || true
+          # Copia o arquivo de backup para o diretório de trabalho (garantindo sua presença)
           cp backup/epg_combinado.xml.gz .
-          # Verifica se os arquivos estão presentes
-          ls -lh
-          # Adiciona e atualiza os arquivos no repositório
-          git add epg_combinado.xml epg_combinado.xml.gz
+          ls -lh epg_combinado.xml.gz
+          # Adiciona e atualiza o arquivo no repositório
+          git add epg_combinado.xml.gz
           git commit -m "Automated combination at $(date -u)"
           git push
 
