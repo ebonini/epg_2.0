@@ -33,6 +33,7 @@ jobs:
           wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
           wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
           wget -O epg_ripper_AU1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz
+          wget -O epg_ripper_PT1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz  # Nova fonte adicionada
           wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
           wget -O maissbt.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/maissbt.xml
           wget -O skysportnow.xml https://i.mjh.nz/SkySportNow/epg.xml
@@ -47,6 +48,7 @@ jobs:
           gzip -d epg_ripper_PE1.xml.gz || true
           gzip -d epg_ripper_BR1.xml.gz || true
           gzip -d epg_ripper_AU1.xml.gz || true
+          gzip -d epg_ripper_PT1.xml.gz || true  # Extração da nova fonte adicionada
           # Os arquivos guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML.
 
       - name: Combine XML files and generate only compressed file
@@ -87,6 +89,7 @@ jobs:
               "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
               "epg_ripper_BR1.xml": carregar_xml('epg_ripper_BR1.xml'),
               "epg_ripper_AU1.xml": carregar_xml('epg_ripper_AU1.xml'),
+              "epg_ripper_PT1.xml": carregar_xml('epg_ripper_PT1.xml'),  # Nova fonte adicionada
               "guide_br3.xml": carregar_xml('guide_br3.xml'),
               "maissbt.xml": carregar_xml('maissbt.xml'),
               "skysportnow.xml": carregar_xml('skysportnow.xml')
@@ -132,12 +135,9 @@ jobs:
 
       - name: Update repository with new .xml.gz file using Git LFS
         run: |
-          # Remove somente os arquivos .xml.gz que queremos atualizar
           git rm -f epg_combinado.xml.gz || true
-          # Copia o arquivo de backup para o diretório de trabalho (garantindo sua presença)
           cp backup/epg_combinado.xml.gz .
           ls -lh epg_combinado.xml.gz
-          # Adiciona e atualiza o arquivo no repositório
           git add epg_combinado.xml.gz
           git commit -m "Automated combination at $(date -u)"
           git push
