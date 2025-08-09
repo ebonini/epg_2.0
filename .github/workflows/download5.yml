@@ -34,10 +34,11 @@ jobs:
           wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
           wget -O epg_ripper_AU1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz
           wget -O epg_ripper_PT1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz
+          wget -O epg_ripper_ZA1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_ZA1.xml.gz  # ✅ Nova fonte adicionada
           wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
           wget -O maissbt.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/maissbt.xml
           wget -O skysportnow.xml https://i.mjh.nz/SkySportNow/epg.xml
-          wget -O epgfixed.xml https://raw.githubusercontent.com/listamake/epgweb.github.io/main/epgfixed.xml  # ✅ Nova fonte adicionada
+          wget -O epgfixed.xml https://raw.githubusercontent.com/listamake/epgweb.github.io/main/epgfixed.xml
 
       - name: Extract files
         run: |
@@ -50,7 +51,8 @@ jobs:
           gzip -d epg_ripper_BR1.xml.gz || true
           gzip -d epg_ripper_AU1.xml.gz || true
           gzip -d epg_ripper_PT1.xml.gz || true
-          # epgfixed.xml já está em XML, não precisa de extração
+          gzip -d epg_ripper_ZA1.xml.gz || true  # ✅ Extração da nova fonte
+          # epgfixed.xml, guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em XML
 
       - name: Combine XML files and generate only compressed file
         run: |
@@ -91,10 +93,11 @@ jobs:
               "epg_ripper_BR1.xml": carregar_xml('epg_ripper_BR1.xml'),
               "epg_ripper_AU1.xml": carregar_xml('epg_ripper_AU1.xml'),
               "epg_ripper_PT1.xml": carregar_xml('epg_ripper_PT1.xml'),
+              "epg_ripper_ZA1.xml": carregar_xml('epg_ripper_ZA1.xml'),  # ✅ Nova fonte incluída
               "guide_br3.xml": carregar_xml('guide_br3.xml'),
               "maissbt.xml": carregar_xml('maissbt.xml'),
               "skysportnow.xml": carregar_xml('skysportnow.xml'),
-              "epgfixed.xml": carregar_xml('epgfixed.xml')  # ✅ Nova fonte incluída
+              "epgfixed.xml": carregar_xml('epgfixed.xml')
           }
 
           root_combined = ET.Element('tv', {
