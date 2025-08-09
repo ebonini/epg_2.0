@@ -33,10 +33,11 @@ jobs:
           wget -O epg_ripper_PE1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PE1.xml.gz
           wget -O epg_ripper_BR1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz
           wget -O epg_ripper_AU1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz
-          wget -O epg_ripper_PT1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz  # Nova fonte adicionada
+          wget -O epg_ripper_PT1.xml.gz https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz
           wget -O guide_br3.xml https://raw.githubusercontent.com/Neywerson/GuideTV/BR3/guide.xml
           wget -O maissbt.xml https://raw.githubusercontent.com/limaalef/BrazilTVEPG/main/maissbt.xml
           wget -O skysportnow.xml https://i.mjh.nz/SkySportNow/epg.xml
+          wget -O epgfixed.xml https://raw.githubusercontent.com/listamake/epgweb.github.io/main/epgfixed.xml  # ✅ Nova fonte adicionada
 
       - name: Extract files
         run: |
@@ -48,8 +49,8 @@ jobs:
           gzip -d epg_ripper_PE1.xml.gz || true
           gzip -d epg_ripper_BR1.xml.gz || true
           gzip -d epg_ripper_AU1.xml.gz || true
-          gzip -d epg_ripper_PT1.xml.gz || true  # Extração da nova fonte adicionada
-          # Os arquivos guide_br3.xml, maissbt.xml, skysportnow.xml e band.xml já estão em formato XML.
+          gzip -d epg_ripper_PT1.xml.gz || true
+          # epgfixed.xml já está em XML, não precisa de extração
 
       - name: Combine XML files and generate only compressed file
         run: |
@@ -57,7 +58,7 @@ jobs:
           import xml.etree.ElementTree as ET
           import gzip
           import io
-          
+
           def carregar_xml(caminho):
               try:
                   tree = ET.parse(caminho)
@@ -65,7 +66,7 @@ jobs:
               except ET.ParseError as e:
                   print(f"Erro ao analisar o arquivo {caminho}: {e}")
                   return None
-          
+
           def identar_elemento(elemento, nivel=0):
               espaco = "  "
               if len(elemento):
@@ -78,7 +79,7 @@ jobs:
               else:
                   if not elemento.tail or not elemento.tail.strip():
                       elemento.tail = f"\n{espaco * nivel}"
-          
+
           fontes = {
               "epg4.xml": carregar_xml('epg4.xml'),
               "br.xml": carregar_xml('br.xml'),
@@ -89,18 +90,19 @@ jobs:
               "epg_ripper_PE1.xml": carregar_xml('epg_ripper_PE1.xml'),
               "epg_ripper_BR1.xml": carregar_xml('epg_ripper_BR1.xml'),
               "epg_ripper_AU1.xml": carregar_xml('epg_ripper_AU1.xml'),
-              "epg_ripper_PT1.xml": carregar_xml('epg_ripper_PT1.xml'),  # Nova fonte adicionada
+              "epg_ripper_PT1.xml": carregar_xml('epg_ripper_PT1.xml'),
               "guide_br3.xml": carregar_xml('guide_br3.xml'),
               "maissbt.xml": carregar_xml('maissbt.xml'),
-              "skysportnow.xml": carregar_xml('skysportnow.xml')
+              "skysportnow.xml": carregar_xml('skysportnow.xml'),
+              "epgfixed.xml": carregar_xml('epgfixed.xml')  # ✅ Nova fonte incluída
           }
-          
+
           root_combined = ET.Element('tv', {
               "generator-info-name": "EPG Combiner",
               "generator-info-url": "https://example.com/"
           })
           ids_existentes = set()
-          
+
           for nome_fonte, root in fontes.items():
               if root is not None:
                   for channel in root.findall('./channel'):
@@ -108,23 +110,23 @@ jobs:
                       if channel_id not in ids_existentes:
                           root_combined.append(channel)
                           ids_existentes.add(channel_id)
-          
+
           for nome_fonte, root in fontes.items():
               if root is not None:
                   for programme in root.findall('./programme'):
                       if programme.attrib.get('channel') in ids_existentes:
                           root_combined.append(programme)
-          
+
           identar_elemento(root_combined)
-          
+
           tree_combined = ET.ElementTree(root_combined)
           buf = io.BytesIO()
           tree_combined.write(buf, encoding='utf-8', xml_declaration=True)
           compressed_data = gzip.compress(buf.getvalue())
-          
+
           with open('epg_combinado.xml.gz', 'wb') as f_out:
               f_out.write(compressed_data)
-          
+
           print("EPG combinado gerado com sucesso!")
           EOF
 
