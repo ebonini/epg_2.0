@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <channel id="br1.so">
+    <display-name lang="pt">BR1</display-name>
+  </channel>
+  <channel id="br2.so">
+    <display-name lang="pt">BR2</display-name>
+  </channel>
+  <channel id="br3.so">
+    <display-name lang="pt">BR3</display-name>
+  </channel>
+  <channel id="br4.so">
+    <display-name lang="pt">BR4</display-name>
+  </channel>
+  <channel id="br5.so">
+    <display-name lang="pt">BR5</display-name>
+  </channel>
+  <channel id="br6.so">
+    <display-name lang="pt">BR6</display-name>
+  </channel>
+  <channel id="hd1.so">
+    <display-name lang="pt">HD1</display-name>
+  </channel>
+  <channel id="hd10.so">
+    <display-name lang="pt">HD10</display-name>
+  </channel>
+  <channel id="hd11.so">
+    <display-name lang="pt">HD11</display-name>
+  </channel>
+  <channel id="hd2.so">
+    <display-name lang="pt">HD2</display-name>
+  </channel>
+  <channel id="hd3.so">
+    <display-name lang="pt">HD3</display-name>
+  </channel>
+  <channel id="hd4.so">
+    <display-name lang="pt">HD4</display-name>
+  </channel>
+  <channel id="hd5.so">
+    <display-name lang="pt">HD5</display-name>
+  </channel>
+  <channel id="hd6.so">
+    <display-name lang="pt">HD6</display-name>
+  </channel>
+  <channel id="hd7.so">
+    <display-name lang="pt">HD7</display-name>
+  </channel>
+  <channel id="hd8.so">
+    <display-name lang="pt">HD8</display-name>
+  </channel>
+  <channel id="hd9.so">
+    <display-name lang="pt">HD9</display-name>
+  </channel>
+  <channel id="sporttv1.so">
+    <display-name lang="pt">SPORTTV1</display-name>
+  </channel>
+  <channel id="sporttv3.so">
+    <display-name lang="pt">SPORTTV3</display-name>
+  </channel>
+  <channel id="sporttv5.so">
+    <display-name lang="pt">SPORTTV5</display-name>
+  </channel>
+  <programme start="20260727040000 -0300" stop="20260727060000 -0300" channel="sporttv3.so">
+    <title lang="pt">ATP World Tour 250: Kitzbuhel 2026</title>
+  </programme>
+  <programme start="20260727090000 -0300" stop="20260727124500 -0300" channel="hd8.so">
+    <title lang="pt">Bologna x Heidenheim</title>
+  </programme>
+  <programme start="20260727124500 -0300" stop="20260727144500 -0300" channel="hd8.so">
+    <title lang="pt">İstanbul Başakşehir x Inter Turku</title>
+  </programme>
+  <programme start="20260727110000 -0300" stop="20260727130000 -0300" channel="hd7.so">
+    <title lang="pt">Napoli x Arezzo</title>
+  </programme>
+  <programme start="20260727120000 -0300" stop="20260727140000 -0300" channel="hd6.so">
+    <title lang="pt">Orlando Pirates x Las Palmas</title>
+  </programme>
+  <programme start="20260727140000 -0300" stop="20260727160000 -0300" channel="hd6.so">
+    <title lang="pt">Tenerife x Getafe</title>
+  </programme>
+  <programme start="20260727120000 -0300" stop="20260727140000 -0300" channel="hd9.so">
+    <title lang="pt">Valencia x Eldense</title>
+  </programme>
+  <programme start="20260727123000 -0300" stop="20260727143000 -0300" channel="hd3.so">
+    <title lang="pt">Levski Sofia x CSU Craiova</title>
+  </programme>
+  <programme start="20260727130000 -0300" stop="20260727150000 -0300" channel="hd10.so">
+    <title lang="pt">Olot x Girona</title>
+  </programme>
+  <programme start="20260727134500 -0300" stop="20260727154500 -0300" channel="hd2.so">
+    <title lang="pt">Queen of the South x Aberdeen</title>
+  </programme>
+  <programme start="20260727183000 -0300" stop="20260727203000 -0300" channel="hd2.so">
+    <title lang="pt">New England x Toronto FC</title>
+  </programme>
+  <programme start="20260728213000 -0300" stop="20260728233000 -0300" channel="hd2.so">
+    <title lang="pt">Los Angeles FC x Real Salt Lake</title>
+  </programme>
+  <programme start="20260727134500 -0300" stop="20260727154500 -0300" channel="hd5.so">
+    <title lang="pt">Rangers x Saint-Étienne</title>
+  </programme>
+  <programme start="20260728191500 -0300" stop="20260728213000 -0300" channel="hd5.so">
+    <title lang="pt">Charlotte x Atlanta United</title>
+  </programme>
+  <programme start="20260728213000 -0300" stop="20260728233000 -0300" channel="hd5.so">
+    <title lang="pt">Los Angeles FC x Real Salt Lake</title>
+  </programme>
+  <programme start="20260727140000 -0300" stop="20260727160000 -0300" channel="hd11.so">
+    <title lang="pt">Železničar Pančevo x Sporting Braga</title>
+  </programme>
+  <programme start="20260727140000 -0300" stop="20260727160000 -0300" channel="sporttv5.so">
+    <title lang="pt">Železničar Pančevo x Sporting Braga</title>
+  </programme>
+  <programme start="20260727140000 -0300" stop="20260727160000 -0300" channel="hd4.so">
+    <title lang="pt">Egnatia Rrogozhinë x Celje</title>
+  </programme>
+  <programme start="20260727140000 -0300" stop="20260727170000 -0300" channel="sporttv1.so">
+    <title lang="pt">Gil Vicente x Porto</title>
+  </programme>
+  <programme start="20260727170000 -0300" stop="20260727190000 -0300" channel="sporttv1.so">
+    <title lang="pt">Medellín x Vasco da Gama</title>
+  </programme>
+  <programme start="20260727170000 -0300" stop="20260727193000 -0300" channel="hd1.so">
+    <title lang="pt">Medellín x Vasco da Gama</title>
+  </programme>
+  <programme start="20260727193000 -0300" stop="20260727213000 -0300" channel="hd1.so">
+    <title lang="pt">Sporting Cristal x RB Bragantino</title>
+  </programme>
+  <programme start="20260727170000 -0300" stop="20260727190000 -0300" channel="br4.so">
+    <title lang="pt">Medellín x Vasco da Gama</title>
+  </programme>
+  <programme start="20260728193000 -0300" stop="20260728213000 -0300" channel="br4.so">
+    <title lang="pt">Sporting Cristal x RB Bragantino</title>
+  </programme>
+  <programme start="20260727171500 -0300" stop="20260727191500 -0300" channel="br6.so">
+    <title lang="pt">Ceará x CRB</title>
+  </programme>
+  <programme start="20260727173000 -0300" stop="20260727193000 -0300" channel="br2.so">
+    <title lang="pt">Coritiba x Palmeiras</title>
+  </programme>
+  <programme start="20260728193000 -0300" stop="20260728213000 -0300" channel="br1.so">
+    <title lang="pt">Chapecoense x Flamengo</title>
+  </programme>
+  <programme start="20260728193000 -0300" stop="20260728213000 -0300" channel="br3.so">
+    <title lang="pt">Internacional x Cruzeiro</title>
+  </programme>
+  <programme start="20260728193000 -0300" stop="20260728213000 -0300" channel="br5.so">
+    <title lang="pt">São Paulo x Athletico-PR</title>
+  </programme>
+</tv>
